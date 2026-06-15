@@ -1,7 +1,7 @@
 /* TV Fun — service worker mínimo (PWA instalável).
    Só faz cache do "shell" estático; NUNCA intercepta /api/, streams ou domínios externos. */
 const CACHE = 'tvfun-shell-v1';
-const SHELL = ['/index.html', '/style.css', '/app.js', '/supabase.js', '/logo.png', '/manifest.json'];
+const SHELL = ['/index.html', '/style.css', '/app.js', '/supabase.js', '/icon-192.png', '/manifest.json'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
