@@ -158,16 +158,15 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
         {
           enableWorker: false,              // worker quebra playback em alguns navegadores → off (estável)
           enableStashBuffer: true,
-          stashInitialSize: 384,            // buffer inicial enxuto; cresce conforme a rede
-          liveBufferLatencyChasing: true,
-          liveBufferLatencyChasingOnPaused: false,
-          liveBufferLatencyMaxLatency: 8.0, // mais folga antes de "perseguir" → evita micro-travadas
-          liveBufferLatencyMinRemain: 1.5,
+          stashInitialSize: 1024,           // cushion de download maior → absorve instabilidade da rede/provedor
+          liveBufferLatencyChasing: false,  // NÃO perseguir o "ao vivo": deixa o buffer encher e segurar as travadas
+          liveSync: false,                  //   (aceita alguns segundos de atraso — em IPTV é totalmente ok)
           autoCleanupSourceBuffer: true,    // limpa buffer antigo (evita estouro de memória em sessões longas)
-          autoCleanupMaxBackwardDuration: 30,
-          autoCleanupMinBackwardDuration: 15,
+          autoCleanupMaxBackwardDuration: 60,
+          autoCleanupMinBackwardDuration: 30,
           lazyLoad: false,
           fixAudioTimestampGap: true,       // suaviza gaps de áudio que causam engasgos
+          reuseRedirectedURL: true,         // reaproveita a URL pós-redirect (comum em painéis Xtream)
         }
       );
       inst.attachMediaElement(videoEl);
@@ -924,23 +923,36 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     startPlayback(ch, false);
   }
 
-  // Watchdog: se o vídeo congelar (currentTime parado) por ~8s, reconecta
+  // Recuperação leve: pula para a borda do buffer (resolve a maioria das travadas sem reconectar)
+  function nudgeToBufferEdge(videoEl) {
+    try {
+      const b = videoEl.buffered;
+      if (b && b.length) {
+        const end = b.end(b.length - 1);
+        if (end - videoEl.currentTime > 0.4) { videoEl.currentTime = end - 0.3; videoEl.play().catch(() => {}); return true; }
+      }
+    } catch {}
+    return false;
+  }
+
+  // Watchdog anti-travamento (canais ao vivo): recupera em 2 níveis antes de reconectar.
   function startStallWatchdog() {
     clearInterval(state.stallTimer);
     const videoEl = document.getElementById('videoEl');
     let lastTime = -1, stalledFor = 0;
     state.stallTimer = setInterval(() => {
       if (!document.getElementById('playerModal').classList.contains('open')) { clearInterval(state.stallTimer); return; }
-      if (videoEl.paused || videoEl.readyState < 2) return; // pausado de propósito não conta
-      if (Math.abs(videoEl.currentTime - lastTime) < 0.05) {
-        stalledFor += 2;
-        if (stalledFor >= 8) { stalledFor = 0; reconnectPlayer('travou'); }
+      if (videoEl.paused || videoEl.readyState < 2) { stalledFor = 0; lastTime = videoEl.currentTime; return; }
+      if (Math.abs(videoEl.currentTime - lastTime) < 0.04) {
+        stalledFor += 1;
+        if (stalledFor === 3) nudgeToBufferEdge(videoEl);          // nível 1 (~3s): pula p/ a borda do buffer (instantâneo)
+        else if (stalledFor >= 8) { stalledFor = 0; reconnectPlayer('travou'); }  // nível 2 (~8s): reconecta
       } else {
         stalledFor = 0;
-        state.reconnectAttempts = 0; // tocou de novo → zera tentativas
+        state.reconnectAttempts = 0; // voltou a tocar → zera tentativas
       }
       lastTime = videoEl.currentTime;
-    }, 2000);
+    }, 1000);
   }
 
   function closePlayer() {

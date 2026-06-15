@@ -250,6 +250,7 @@ async function handleStream(req, res, urlObj) {
     if (cl) outHeaders['Content-Length'] = cl;
 
     res.writeHead(upstream.status, outHeaders);
+    try { res.socket && res.socket.setNoDelay(true); } catch {}  // sem Nagle → menos latência no stream ao vivo
 
     const nodeStream = Readable.fromWeb(upstream.body);
     // Sockets de vídeo quebram o tempo todo — engolir erros de pipe/abort sem derrubar o processo
