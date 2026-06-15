@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar — TV Fun</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="auth.css">
+  <style>
+    /* ===== Chat vendedor (somente landing, pré-login) ===== */
+    .schat { position: fixed; right: 22px; bottom: 22px; z-index: 9999; font-family: Inter, system-ui, sans-serif; }
+    .schat-bubble { position: relative; width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer;
+      background: linear-gradient(135deg, #e50914, #b00610); color: #fff; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 30px rgba(229, 9, 20, .45); transition: transform .2s; }
+    .schat-bubble:hover { transform: scale(1.07); }
+    .schat-bubble svg { width: 28px; height: 28px; }
+    .schat-badge { position: absolute; top: -2px; right: -2px; background: #1db954; color: #fff; font-size: 11px; font-weight: 800;
+      width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #0b0b0f; }
+    .schat-panel { position: absolute; right: 0; bottom: 74px; width: 360px; max-width: calc(100vw - 32px);
+      height: 520px; max-height: calc(100vh - 120px); background: rgba(16, 14, 18, .97);
+      -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 70px rgba(0, 0, 0, .6); animation: schat-in .25s ease; }
+    .schat-panel[hidden] { display: none; }
+    @keyframes schat-in { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .schat-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(229, 9, 20, .18), rgba(229, 9, 20, .04)); border-bottom: 1px solid rgba(255, 255, 255, .08); }
+    .schat-head-av { width: 38px; height: 38px; border-radius: 50%; background: #e50914; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .schat-head-info { flex: 1; line-height: 1.25; }
+    .schat-head-info strong { color: #fff; font-size: 14px; display: block; }
+    .schat-head-info span { color: #1db954; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .schat-head-info span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #1db954; box-shadow: 0 0 6px #1db954; }
+    .schat-close { background: none; border: none; color: rgba(255, 255, 255, .5); font-size: 24px; cursor: pointer; line-height: 1; padding: 0 4px; }
+    .schat-close:hover { color: #fff; }
+    .schat-msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .schat-msg { max-width: 82%; padding: 10px 13px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
+    .schat-msg.bot { align-self: flex-start; background: rgba(255, 255, 255, .07); color: #eee; border-bottom-left-radius: 4px; }
+    .schat-msg.me { align-self: flex-end; background: #e50914; color: #fff; border-bottom-right-radius: 4px; }
+    .schat-typing { align-self: flex-start; display: flex; gap: 4px; padding: 12px 14px; background: rgba(255, 255, 255, .07); border-radius: 14px; border-bottom-left-radius: 4px; }
+    .schat-typing span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .5); animation: schat-blink 1.2s infinite; }
+    .schat-typing span:nth-child(2) { animation-delay: .2s; } .schat-typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes schat-blink { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+    .schat-quick { display: flex; gap: 7px; flex-wrap: wrap; padding: 0 14px 10px; }
+    .schat-quick button { background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .14); color: #ddd; font-size: 12px;
+      padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: background .15s, border-color .15s; font-family: inherit; }
+    .schat-quick button:hover { background: rgba(229, 9, 20, .18); border-color: rgba(229, 9, 20, .5); color: #fff; }
+    .schat-quick button.cta { background: #e50914; border-color: #e50914; color: #fff; font-weight: 700; }
+    .schat-input { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid rgba(255, 255, 255, .08); }
+    .schat-input input { flex: 1; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); border-radius: 22px;
+      padding: 10px 15px; color: #fff; font-size: 13.5px; outline: none; font-family: inherit; }
+    .schat-input input:focus { border-color: rgba(229, 9, 20, .6); }
+    .schat-input button { width: 42px; height: 42px; border-radius: 50%; border: none; background: #e50914; color: #fff; cursor: pointer; font-size: 16px; flex-shrink: 0; transition: filter .15s; }
+    .schat-input button:hover { filter: brightness(1.12); }
+    @media (max-width: 480px) { .schat-panel { height: 70vh; } }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase.js"></script>
+</head>
+<body>
+
+  <nav class="auth-nav">
+    <span class="auth-nav-logo"><img src="logo.png" alt="" onerror="this.style.display='none'" style="height:26px;vertical-align:middle;margin-right:7px"> TV FUN</span>
+    <div class="auth-nav-right">
+      <span>Novo por aqui?</span>
+      <a href="#" id="navRegLink">Criar conta</a>
+    </div>
+  </nav>
+
+  <div class="login-page">
+
+    <!-- LEFT: branding -->
+    <div class="login-left">
+      <div class="login-brand">
+        <div class="login-brand-logo"><img src="logo.png" alt="" onerror="this.style.display='none'" style="height:42px;vertical-align:middle;margin-right:10px"> TV FUN</div>
+        <div class="login-brand-sub">Plataforma IPTV Autorizada</div>
+      </div>
+      <h1 class="login-headline">
+        Assista seus<br>
+        <span>canais favoritos</span><br>
+        em qualquer tela
+      </h1>
+      <div class="login-features">
+        <div class="feat-item">
+          <div class="feat-icon">📺</div>
+          <div class="feat-text">
+            <p>1.800+ canais ao vivo</p>
+            <span>+ 30 mil filmes e 10 mil séries</span>
+          </div>
+        </div>
+        <div class="feat-item">
+          <div class="feat-icon">🎬</div>
+          <div class="feat-text">
+            <p>Ultra HD &amp; 4K</p>
+            <span>Qualidade máxima em todos os planos</span>
+          </div>
+        </div>
+        <div class="feat-item">
+          <div class="feat-icon">📱</div>
+          <div class="feat-text">
+            <p>Qualquer dispositivo</p>
+            <span>TV, celular, tablet e computador</span>
+          </div>
+        </div>
+        <div class="feat-item">
+          <div class="feat-icon">🔒</div>
+          <div class="feat-text">
+            <p>100% autorizado</p>
+            <span>Serviço licenciado e seguro</span>
+          </div>
+        </div>
+      </div>
+      <div class="login-stats">
+        <div class="stat"><div class="stat-n">1.8k</div><div class="stat-l">Canais</div></div>
+        <div class="stat"><div class="stat-n">30k+</div><div class="stat-l">Filmes</div></div>
+        <div class="stat"><div class="stat-n">10k+</div><div class="stat-l">Séries</div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: form -->
+    <div class="login-right">
+      <div class="login-card">
+
+        <div class="login-tabs">
+          <button class="login-tab active" id="tabEntrar">Entrar</button>
+          <button class="login-tab" id="tabCriar">Criar conta</button>
+        </div>
+
+        <!-- LOGIN PANEL -->
+        <div class="login-form-panel active" id="panelLogin">
+          <div class="form-error" id="loginError"></div>
+
+          <div class="field">
+            <label for="loginEmail">E-mail</label>
+            <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="loginPassword">Senha</label>
+            <div class="input-wrap">
+              <input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password">
+              <button type="button" class="show-pass" data-target="loginPassword">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="remember-row">
+            <label class="check-label">
+              <input type="checkbox" id="rememberMe" checked>
+              Lembrar de mim
+            </label>
+            <button class="btn-ghost" id="forgotBtn">Esqueci a senha</button>
+          </div>
+          <button class="btn-primary" id="btnLogin">Entrar</button>
+
+          <div class="divider">ou</div>
+
+          <div class="login-demo">
+            🔒 Conectado ao <strong>Supabase</strong><br>
+            Crie sua conta na aba "Criar conta" acima
+          </div>
+        </div>
+
+        <!-- REGISTER PANEL -->
+        <div class="login-form-panel" id="panelRegister">
+          <div class="form-error" id="registerError"></div>
+
+          <div class="field">
+            <label for="regName">Nome completo</label>
+            <input type="text" id="regName" placeholder="Seu nome" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="regEmail">E-mail</label>
+            <input type="email" id="regEmail" placeholder="seu@email.com" autocomplete="email">
+          </div>
+          <div class="form-row-2">
+            <div class="field">
+              <label for="regPw">Senha</label>
+              <div class="input-wrap">
+                <input type="password" id="regPw" placeholder="Mín. 6 caracteres">
+                <button type="button" class="show-pass" data-target="regPw">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="regPwConf">Confirmar</label>
+              <div class="input-wrap">
+                <input type="password" id="regPwConf" placeholder="Repita a senha">
+                <button type="button" class="show-pass" data-target="regPwConf">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <label class="check-label">
+            <input type="checkbox" id="agreeTerms">
+            Concordo com os Termos de Uso e a <a href="privacidade.html" style="color:var(--red)">Política de Privacidade</a>
+          </label>
+          <button class="btn-primary" id="btnRegister">Criar conta</button>
+
+          <p class="terms-text">Ao criar sua conta, você será redirecionado para escolher um plano.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (async function() {
+    'use strict';
+
+    // Já logado?
+    const user = await TVFunDB.getUser();
+    if (user) {
+      const active = await TVFunDB.isPlanActive();
+      window.location.href = active ? 'index.html' : 'planos.html';
+      return;
+    }
+
+    // Tabs
+    const tabEntrar = document.getElementById('tabEntrar');
+    const tabCriar  = document.getElementById('tabCriar');
+    const panelL = document.getElementById('panelLogin');
+    const panelR = document.getElementById('panelRegister');
+    const navReg = document.getElementById('navRegLink');
+
+    function showLogin() {
+      tabEntrar.classList.add('active'); tabCriar.classList.remove('active');
+      panelL.classList.add('active'); panelR.classList.remove('active');
+    }
+    function showRegister() {
+      tabCriar.classList.add('active'); tabEntrar.classList.remove('active');
+      panelR.classList.add('active'); panelL.classList.remove('active');
+    }
+
+    tabEntrar.addEventListener('click', showLogin);
+    tabCriar.addEventListener('click', showRegister);
+    navReg.addEventListener('click', e => { e.preventDefault(); showRegister(); });
+
+    // Toggle senha visível
+    document.querySelectorAll('.show-pass').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const inp = document.getElementById(btn.dataset.target);
+        if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+      });
+    });
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg; el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 5000);
+    }
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.textContent = loading ? 'Aguarde...' : (btnId === 'btnLogin' ? 'Entrar' : 'Criar conta');
+    }
+
+    // ── LOGIN ──────────────────────────────
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pw    = document.getElementById('loginPassword').value;
+      if (!email || !pw) { showError('loginError', 'Preencha e-mail e senha.'); return; }
+      setLoading('btnLogin', true);
+      const r = await TVFunDB.signIn(email, pw);
+      setLoading('btnLogin', false);
+      if (r.error) { showError('loginError', r.error); return; }
+      const active = await TVFunDB.isPlanActive();
+      window.location.href = active ? 'index.html' : 'planos.html?action=new';
+    });
+
+    document.getElementById('loginPassword').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btnLogin').click();
+    });
+
+    // ── REGISTRO ──────────────────────────
+    document.getElementById('btnRegister').addEventListener('click', async () => {
+      const name  = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pw    = document.getElementById('regPw').value;
+      const conf  = document.getElementById('regPwConf').value;
+      const terms = document.getElementById('agreeTerms').checked;
+
+      if (!name)  { showError('registerError', 'Informe seu nome.'); return; }
+      if (!email.includes('@')) { showError('registerError', 'E-mail inválido.'); return; }
+      if (pw.length < 6) { showError('registerError', 'Senha deve ter pelo menos 6 caracteres.'); return; }
+      if (pw !== conf) { showError('registerError', 'As senhas não coincidem.'); return; }
+      if (!terms) { showError('registerError', 'Aceite os termos de uso.'); return; }
+
+      setLoading('btnRegister', true);
+      const r = await TVFunDB.signUp(name, email, pw);
+      setLoading('btnRegister', false);
+
+      if (r.error) { showError('registerError', r.error); return; }
+      if (r.needsConfirm) {
+        showError('registerError', '✅ Confirme seu e-mail para continuar.');
+        document.getElementById('registerError').style.background = 'rgba(29,185,84,.1)';
+        document.getElementById('registerError').style.borderColor = 'rgba(29,185,84,.3)';
+        document.getElementById('registerError').style.color = '#1db954';
+        return;
+      }
+      window.location.href = 'planos.html?action=new';
+    });
+
+    // ── ESQUECI A SENHA ───────────────────
+    document.getElementById('forgotBtn').addEventListener('click', async () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      if (!email) { toast('Digite seu e-mail no campo acima primeiro.'); return; }
+      const r = await TVFunDB.resetPassword(email);
+      if (r.error) { toast('⚠ ' + r.error); return; }
+      toast('📧 Link de redefinição enviado para ' + email);
+    });
+  })();
+  </script>
+
+  <!-- ===== Chat vendedor (somente landing, antes do login) ===== -->
+  <div class="schat" id="salesChat">
+    <button class="schat-bubble" id="schatToggle" aria-label="Falar com o atendimento">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <span class="schat-badge" id="schatBadge">1</span>
+    </button>
+    <div class="schat-panel" id="schatPanel" hidden>
+      <div class="schat-head">
+        <div class="schat-head-av">🎬</div>
+        <div class="schat-head-info"><strong>Atendimento TV Fun</strong><span>Online agora</span></div>
+        <button class="schat-close" id="schatClose" aria-label="Fechar chat">×</button>
+      </div>
+      <div class="schat-msgs" id="schatMsgs"></div>
+      <div class="schat-quick" id="schatQuick">
+        <button data-q="Quais planos e preços vocês têm?">Planos e preços</button>
+        <button data-q="Tem os canais de futebol e jogos ao vivo?">Futebol ⚽</button>
+        <button class="cta" data-cta="1">✨ Testar grátis</button>
+      </div>
+      <form class="schat-input" id="schatForm">
+        <input id="schatText" type="text" placeholder="Escreva sua mensagem..." autocomplete="off" maxlength="500">
+        <button type="submit" aria-label="Enviar">➤</button>
+      </form>
+    </div>
+  </div>
+  <script>
+  (function () {
+    'use strict';
+    var WEBHOOK = 'https://projeto01-n8n.grgyfj.easypanel.host/webhook/tvfun-chat';
+    var GREETING = 'Oi! 👋 Sou o assistente da TV Fun. Me conta o que você mais curte assistir — futebol, filmes, séries, novelas? Eu te ajudo a achar o plano ideal (e dá pra testar de graça 😉).';
+    var toggle = document.getElementById('schatToggle'),
+        panel = document.getElementById('schatPanel'),
+        closeBtn = document.getElementById('schatClose'),
+        msgsEl = document.getElementById('schatMsgs'),
+        form = document.getElementById('schatForm'),
+        input = document.getElementById('schatText'),
+        badge = document.getElementById('schatBadge'),
+        quick = document.getElementById('schatQuick');
+    var history = [], greeted = false, busy = false;
+
+    function scrollDown() { msgsEl.scrollTop = msgsEl.scrollHeight; }
+    function addMsg(role, txt) {
+      var d = document.createElement('div');
+      d.className = 'schat-msg ' + (role === 'user' ? 'me' : 'bot');
+      d.textContent = txt; msgsEl.appendChild(d); scrollDown();
+    }
+    function typing(on) {
+      var ex = document.getElementById('schatTyping');
+      if (on) { if (ex) return; var t = document.createElement('div'); t.className = 'schat-typing'; t.id = 'schatTyping';
+        t.innerHTML = '<span></span><span></span><span></span>'; msgsEl.appendChild(t); scrollDown(); }
+      else if (ex) { ex.remove(); }
+    }
+    function openChat() {
+      panel.hidden = false; if (badge) badge.style.display = 'none';
+      if (!greeted) { addMsg('bot', GREETING); history.push({ role: 'assistant', content: GREETING }); greeted = true; }
+      setTimeout(function () { input.focus(); }, 50);
+    }
+    function closeChat() { panel.hidden = true; }
+    toggle.addEventListener('click', function () { panel.hidden ? openChat() : closeChat(); });
+    closeBtn.addEventListener('click', closeChat);
+
+    async function send(txt) {
+      if (busy || !txt) return; busy = true;
+      addMsg('user', txt); history.push({ role: 'user', content: txt });
+      typing(true);
+      try {
+        var r = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify({ messages: history }) });
+        var d = await r.json().catch(function () { return {}; });
+        var reply = (d && (d.reply || d.text || d.message)) || '';
+        typing(false);
+        if (d && d.lead && d.lead.whatsapp && typeof TVFunDB !== 'undefined' && TVFunDB.saveLead) { TVFunDB.saveLead(d.lead); }
+        if (reply) { addMsg('bot', reply); history.push({ role: 'assistant', content: reply }); }
+        else { addMsg('bot', 'Desculpa, não entendi 😅. Pode reformular? Ou clique em "✨ Testar grátis" pra começar agora!'); }
+      } catch (e) {
+        typing(false);
+        addMsg('bot', 'Estou com uma instabilidade aqui 😅. Mas você já pode criar seu teste grátis na aba "Criar conta" — leva 1 minutinho!');
+      }
+      busy = false;
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault(); var t = input.value.trim(); if (!t) return; input.value = ''; send(t);
+    });
+    quick.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.cta) {
+        var tab = document.getElementById('tabCriar'); if (tab) tab.click();
+        if (!greeted) openChat();
+        addMsg('bot', 'Boa! 🎉 Abri a aba "Criar conta" pra você. Cria seu acesso que o teste grátis já fica liberado.');
+        return;
+      }
+      if (b.dataset.q) send(b.dataset.q);
+    });
+  })();
+  </script>
+</body>
+</html>

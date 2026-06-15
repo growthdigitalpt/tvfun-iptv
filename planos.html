@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escolha seu plano — TV Fun</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="auth.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase.js"></script>
+  <style>
+    body { background: var(--bg); }
+    .planos-page { padding-top: 32px; }
+  </style>
+</head>
+<body>
+
+  <nav class="auth-nav">
+    <span class="auth-nav-logo">TV FUN</span>
+    <div class="auth-nav-right">
+      <span id="navUserName" style="color:var(--gray2)"></span>
+      <a href="#" id="navLogout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="planos-page">
+
+    <!-- STEP INDICATOR -->
+    <div class="steps" id="stepsBar">
+      <div class="step">
+        <div class="step-circle active" id="sc1">1</div>
+        <div class="step-label active" id="sl1">Plano</div>
+      </div>
+      <div class="step-line" id="line1"></div>
+      <div class="step">
+        <div class="step-circle" id="sc2">2</div>
+        <div class="step-label" id="sl2">Pagamento</div>
+      </div>
+      <div class="step-line" id="line2"></div>
+      <div class="step">
+        <div class="step-circle" id="sc3">3</div>
+        <div class="step-label" id="sl3">Confirmação</div>
+      </div>
+    </div>
+
+    <!-- STEP 1: PLAN SELECTION -->
+    <div class="panel active" id="step1">
+      <h2 class="panel-title" id="step1Title">Escolha seu plano</h2>
+      <p class="panel-sub">Todos os planos incluem acesso imediato. Cancele quando quiser.</p>
+
+      <div class="plan-cards">
+        <div class="plan-card" id="card-basico" onclick="selectPlan('basico')">
+          <div class="plan-card-check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="plan-card-badge">🔵</div>
+          <div class="plan-card-name">Básico</div>
+          <div class="plan-card-quality">HD · 1 tela</div>
+          <ul class="plan-card-features">
+            <li>1.800+ canais, 30k filmes e 10k séries</li>
+            <li>Qualidade até HD</li>
+            <li>1 tela simultânea</li>
+            <li>Sem conteúdo adulto</li>
+          </ul>
+          <div class="plan-card-price" id="price-basico">R$ 24,90 <span>/mês</span></div>
+        </div>
+
+        <div class="plan-card selected" id="card-padrao" onclick="selectPlan('padrao')">
+          <div class="plan-card-popular">Mais popular</div>
+          <div class="plan-card-check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="plan-card-badge">🟣</div>
+          <div class="plan-card-name">Padrão</div>
+          <div class="plan-card-quality">Full HD · 2 telas</div>
+          <ul class="plan-card-features">
+            <li>1.800+ canais, 30k filmes e 10k séries</li>
+            <li>Qualidade até Full HD</li>
+            <li>2 telas simultâneas</li>
+            <li>Sem conteúdo adulto</li>
+          </ul>
+          <div class="plan-card-price" id="price-padrao">R$ 30,00 <span>/mês</span></div>
+        </div>
+
+        <div class="plan-card" id="card-premium" onclick="selectPlan('premium')">
+          <div class="plan-card-check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="plan-card-badge">🟡</div>
+          <div class="plan-card-name">Premium</div>
+          <div class="plan-card-quality">Ultra HD · 2 telas · 🔞</div>
+          <ul class="plan-card-features">
+            <li>1.800+ canais, 30k filmes e 10k séries</li>
+            <li>Qualidade até Ultra HD / 4K</li>
+            <li>2 telas simultâneas</li>
+            <li>Inclui conteúdo adulto 🔞</li>
+          </ul>
+          <div class="plan-card-price" id="price-premium">R$ 39,90 <span>/mês</span></div>
+        </div>
+      </div>
+
+      <div class="duration-row">
+        <button class="dur-btn selected" id="dur-mensal" onclick="selectDuration('mensal')">
+          <div>Mensal</div>
+          <div class="dur-price" id="dp-mensal">R$ 39,90</div>
+          <div class="dur-label">por mês</div>
+        </button>
+        <button class="dur-btn" id="dur-trimestral" onclick="selectDuration('trimestral')">
+          <div class="dur-save">-15%</div>
+          Trimestral
+          <div class="dur-price" id="dp-trimestral">R$ 33,97</div>
+          <div class="dur-label">por mês</div>
+        </button>
+        <button class="dur-btn" id="dur-semestral" onclick="selectDuration('semestral')">
+          <div class="dur-save">-24%</div>
+          Semestral
+          <div class="dur-price" id="dp-semestral">R$ 29,98</div>
+          <div class="dur-label">por mês</div>
+        </button>
+        <button class="dur-btn" id="dur-anual" onclick="selectDuration('anual')">
+          <div class="dur-save">-37%</div>
+          Anual
+          <div class="dur-price" id="dp-anual">R$ 24,99</div>
+          <div class="dur-label">por mês</div>
+        </button>
+      </div>
+
+      <div class="summary-bar">
+        <div class="summary-plan">Plano selecionado: <strong id="summaryPlanName">Padrão — Mensal</strong></div>
+        <div class="summary-total">
+          <div class="summary-total-label">Total a pagar</div>
+          <div class="summary-total-price"><span id="summaryPrice">R$ 39,90</span></div>
+        </div>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn-primary" onclick="goStep(2)">
+          Continuar para pagamento →
+        </button>
+        <button class="btn-outline" onclick="window.location.href='index.html'">Voltar</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: PAYMENT -->
+    <div class="panel" id="step2">
+      <h2 class="panel-title">Como prefere pagar?</h2>
+      <p class="panel-sub" id="paySubtitle">Plano Padrão Mensal — <strong>R$ 39,90</strong></p>
+
+      <div class="pay-methods">
+        <button class="pay-method-btn selected" id="meth-pix" onclick="selectMethod('pix')">
+          <div class="pay-method-icon">⚡</div>
+          <div class="pay-method-label">PIX</div>
+          <div class="pay-method-sub">Aprovação imediata</div>
+        </button>
+        <button class="pay-method-btn" id="meth-card" onclick="selectMethod('card')">
+          <div class="pay-method-icon">💳</div>
+          <div class="pay-method-label">Cartão</div>
+          <div class="pay-method-sub">Crédito ou débito</div>
+        </button>
+        <button class="pay-method-btn" id="meth-boleto" onclick="selectMethod('boleto')">
+          <div class="pay-method-icon">📄</div>
+          <div class="pay-method-label">Boleto</div>
+          <div class="pay-method-sub">Vence em 3 dias</div>
+        </button>
+      </div>
+
+      <!-- PIX -->
+      <div class="pay-panel active" id="pay-pix">
+        <div class="pix-box">
+          <div class="pix-qr">
+            <img id="pixQrImg" src="" alt="QR Code PIX">
+          </div>
+          <div class="pix-info">
+            <h3>Pague com PIX</h3>
+            <div class="pix-row">
+              <label>Beneficiário</label>
+              <span style="font-size:14px;font-weight:600">TV Fun IPTV Ltda.</span>
+            </div>
+            <div class="pix-row">
+              <label>Valor</label>
+              <span id="pixValor" style="font-size:18px;font-weight:900;color:var(--green)">R$ 39,90</span>
+            </div>
+            <div class="pix-row">
+              <label>Chave PIX (e-mail)</label>
+              <div class="pix-copy-wrap">
+                <div class="pix-code" id="pixChave">contato@tvfun.com.br</div>
+                <button class="btn-outline" style="padding:6px 12px;font-size:12px;white-space:nowrap" onclick="copyPix()">Copiar</button>
+              </div>
+            </div>
+            <div class="pix-timer">
+              <div class="pix-timer-dot"></div>
+              Expira em <span id="pixCountdown">09:59</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel-actions" style="margin-top:16px">
+          <button class="btn-primary" id="btnConfirmPix" onclick="confirmPayment()">✓ Já realizei o pagamento</button>
+          <button class="btn-outline" onclick="goStep(1)">← Voltar</button>
+        </div>
+      </div>
+
+      <!-- CARD -->
+      <div class="pay-panel" id="pay-card">
+        <div class="card-visual-wrap">
+          <div class="card-visual" id="cardVisual">
+            <div class="card-face">
+              <div>
+                <div class="card-chip"></div>
+                <div class="card-number-display" id="cdNumber">•••• •••• •••• ••••</div>
+              </div>
+              <div class="card-bottom">
+                <div>
+                  <div class="card-holder-label">Nome no cartão</div>
+                  <div class="card-holder-name" id="cdName">SEU NOME</div>
+                </div>
+                <div>
+                  <div class="card-expiry-label">Validade</div>
+                  <div class="card-expiry-display" id="cdExpiry">MM/AA</div>
+                </div>
+                <div class="card-brand" id="cdBrand">💳</div>
+              </div>
+            </div>
+            <div class="card-back">
+              <div class="card-stripe"></div>
+              <div class="cvv-label">CVV</div>
+              <div class="cvv-display" id="cdCvv">•••</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-form">
+          <div class="field" style="grid-column:1/-1">
+            <label>Número do cartão</label>
+            <input type="text" id="cfNumber" maxlength="19" placeholder="0000 0000 0000 0000" oninput="fmtCard(this)">
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>Nome impresso no cartão</label>
+            <input type="text" id="cfName" placeholder="NOME COMPLETO" style="text-transform:uppercase" oninput="updCard()">
+          </div>
+          <div class="field">
+            <label>Validade (MM/AA)</label>
+            <input type="text" id="cfExpiry" maxlength="5" placeholder="MM/AA" oninput="fmtExpiry(this)">
+          </div>
+          <div class="field">
+            <label>CVV</label>
+            <input type="text" id="cfCvv" maxlength="4" placeholder="000" onfocus="flipCard(true)" onblur="flipCard(false)" oninput="updCard()">
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>Parcelas</label>
+            <select id="cfParcelas"></select>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn-primary" onclick="confirmPayment()">🔒 Pagar agora</button>
+          <button class="btn-outline" onclick="goStep(1)">← Voltar</button>
+        </div>
+      </div>
+
+      <!-- BOLETO -->
+      <div class="pay-panel" id="pay-boleto">
+        <div class="boleto-box">
+          <h3>Boleto Bancário</h3>
+          <div class="barcode-img">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 60" style="width:100%;height:100%">
+              <rect width="400" height="60" fill="white"/>
+              <g fill="black">
+                <!-- barcode pattern (fake) -->
+                <rect x="4" width="2" height="60"/><rect x="8" width="1" height="60"/><rect x="11" width="3" height="60"/>
+                <rect x="16" width="1" height="60"/><rect x="19" width="2" height="60"/><rect x="23" width="1" height="60"/>
+                <rect x="26" width="3" height="60"/><rect x="31" width="1" height="60"/><rect x="34" width="2" height="60"/>
+                <rect x="38" width="1" height="60"/><rect x="41" width="3" height="60"/><rect x="46" width="2" height="60"/>
+                <rect x="50" width="1" height="60"/><rect x="53" width="3" height="60"/><rect x="58" width="1" height="60"/>
+                <rect x="61" width="2" height="60"/><rect x="65" width="3" height="60"/><rect x="70" width="1" height="60"/>
+                <rect x="73" width="2" height="60"/><rect x="77" width="1" height="60"/><rect x="80" width="3" height="60"/>
+                <rect x="85" width="1" height="60"/><rect x="88" width="2" height="60"/><rect x="92" width="1" height="60"/>
+                <rect x="95" width="3" height="60"/><rect x="100" width="2" height="60"/><rect x="104" width="1" height="60"/>
+                <rect x="107" width="3" height="60"/><rect x="112" width="1" height="60"/><rect x="115" width="2" height="60"/>
+                <rect x="119" width="1" height="60"/><rect x="122" width="3" height="60"/><rect x="127" width="1" height="60"/>
+                <rect x="130" width="2" height="60"/><rect x="134" width="3" height="60"/><rect x="139" width="1" height="60"/>
+                <rect x="142" width="2" height="60"/><rect x="146" width="1" height="60"/><rect x="149" width="3" height="60"/>
+                <rect x="154" width="1" height="60"/><rect x="157" width="2" height="60"/><rect x="161" width="1" height="60"/>
+                <rect x="164" width="3" height="60"/><rect x="169" width="2" height="60"/><rect x="173" width="1" height="60"/>
+                <rect x="176" width="3" height="60"/><rect x="181" width="1" height="60"/><rect x="184" width="2" height="60"/>
+                <rect x="188" width="1" height="60"/><rect x="191" width="3" height="60"/><rect x="196" width="1" height="60"/>
+                <rect x="199" width="2" height="60"/><rect x="203" width="3" height="60"/><rect x="208" width="1" height="60"/>
+                <rect x="211" width="2" height="60"/><rect x="215" width="1" height="60"/><rect x="218" width="3" height="60"/>
+                <rect x="223" width="1" height="60"/><rect x="226" width="2" height="60"/><rect x="230" width="1" height="60"/>
+                <rect x="233" width="3" height="60"/><rect x="238" width="2" height="60"/><rect x="242" width="1" height="60"/>
+                <rect x="245" width="3" height="60"/><rect x="250" width="1" height="60"/><rect x="253" width="2" height="60"/>
+                <rect x="257" width="1" height="60"/><rect x="260" width="3" height="60"/><rect x="265" width="1" height="60"/>
+                <rect x="268" width="2" height="60"/><rect x="272" width="3" height="60"/><rect x="277" width="1" height="60"/>
+                <rect x="280" width="2" height="60"/><rect x="284" width="1" height="60"/><rect x="287" width="3" height="60"/>
+                <rect x="292" width="1" height="60"/><rect x="295" width="2" height="60"/><rect x="299" width="1" height="60"/>
+                <rect x="302" width="3" height="60"/><rect x="307" width="2" height="60"/><rect x="311" width="1" height="60"/>
+                <rect x="314" width="3" height="60"/><rect x="319" width="1" height="60"/><rect x="322" width="2" height="60"/>
+                <rect x="326" width="1" height="60"/><rect x="329" width="3" height="60"/><rect x="334" width="1" height="60"/>
+                <rect x="337" width="2" height="60"/><rect x="341" width="3" height="60"/><rect x="346" width="1" height="60"/>
+                <rect x="349" width="2" height="60"/><rect x="353" width="1" height="60"/><rect x="356" width="3" height="60"/>
+                <rect x="361" width="1" height="60"/><rect x="364" width="2" height="60"/><rect x="368" width="1" height="60"/>
+                <rect x="371" width="3" height="60"/><rect x="376" width="2" height="60"/><rect x="380" width="1" height="60"/>
+                <rect x="383" width="3" height="60"/><rect x="388" width="1" height="60"/><rect x="391" width="2" height="60"/>
+                <rect x="395" width="2" height="60"/>
+              </g>
+            </svg>
+          </div>
+          <div class="boleto-code" id="boletoCode">
+            10497.91201 23000.100036 00603.240007 9 91230000003990
+          </div>
+          <div class="boleto-meta">
+            <div class="boleto-meta-item">
+              <label>Valor</label>
+              <span id="boletoValor">R$ 39,90</span>
+            </div>
+            <div class="boleto-meta-item">
+              <label>Vencimento</label>
+              <span id="boletoVenc">—</span>
+            </div>
+            <div class="boleto-meta-item">
+              <label>Beneficiário</label>
+              <span>TV Fun IPTV Ltda.</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-outline" onclick="copyBoleto()">📋 Copiar código</button>
+            <button class="btn-primary" style="flex:1" onclick="confirmPayment()">✓ Simular pagamento</button>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn-outline" style="flex:1" onclick="goStep(1)">← Voltar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: SUCCESS -->
+    <div class="panel" id="step3">
+      <div class="success-panel">
+        <div class="success-icon">🎉</div>
+        <h2 class="success-title">Pagamento confirmado!</h2>
+        <p class="success-sub">Seu plano foi ativado com sucesso.</p>
+        <p class="success-sub" id="successExpiry"></p>
+        <div class="success-plan" id="successPlanBadge">🟣 Plano Padrão ativo</div>
+        <br>
+        <button class="success-btn" onclick="window.location.href='index.html'">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Começar a assistir
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (async function() {
+    'use strict';
+
+    const user = await TVFunDB.requireAuth();
+    if (!user) return;
+
+    const profile = await TVFunDB.getProfile();
+    document.getElementById('navUserName').textContent = profile?.name || user.email.split('@')[0];
+    document.getElementById('navLogout').addEventListener('click', e => { e.preventDefault(); TVFunDB.signOut(); });
+
+    const params = new URLSearchParams(location.search);
+    const isRenewal = params.get('action') === 'renewal';
+    if (isRenewal) document.getElementById('step1Title').textContent = 'Renovar / Trocar plano';
+
+    // Plano atual do usuário
+    const activeSub = await TVFunDB.getActiveSubscription();
+
+    // ===== STATE =====
+    let selPlan = (activeSub?.plan && TVFunDB.PLANS[activeSub.plan]) ? activeSub.plan : 'padrao';
+    let selDur  = activeSub?.duration || 'mensal';
+    let selMeth = 'pix';
+    let pixTimer = null;
+
+    const PLANS = TVFunDB.PLANS;
+    const DURLABELS = { mensal: 'Mensal', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' };
+    const DURMONTHS = TVFunDB.DURATION_MONTHS;
+
+    // ===== HELPERS =====
+    function fmt(v) { return 'R$ ' + v.toFixed(2).replace('.', ','); }
+
+    function getPrice(plan, dur) { return PLANS[plan]?.prices[dur] || 0; }
+    function getMonthlyEq(plan, dur) { return getPrice(plan, dur) / DURMONTHS[dur]; }
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    // ===== PLAN SELECTION =====
+    window.selectPlan = function(p) {
+      selPlan = p;
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+      document.getElementById('card-' + p).classList.add('selected');
+      refreshPrices();
+      refreshSummary();
+    };
+
+    window.selectDuration = function(d) {
+      selDur = d;
+      document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('selected'));
+      document.getElementById('dur-' + d).classList.add('selected');
+      refreshPrices();
+      refreshSummary();
+    };
+
+    function refreshPrices() {
+      ['basico','padrao','premium'].forEach(p => {
+        const price = getPrice(p, selDur);
+        const months = DURMONTHS[selDur];
+        const suffix = months === 1 ? '/mês' : `/${months} meses`;
+        const el = document.getElementById('price-' + p);
+        if (el) el.innerHTML = fmt(price) + ` <span>${suffix}</span>`;
+      });
+      ['mensal','trimestral','semestral','anual'].forEach(d => {
+        const eq = getMonthlyEq(selPlan, d);
+        const el = document.getElementById('dp-' + d);
+        if (el) el.textContent = fmt(eq);
+      });
+    }
+
+    function refreshSummary() {
+      const price = getPrice(selPlan, selDur);
+      const planName = PLANS[selPlan]?.name || '';
+      document.getElementById('summaryPlanName').textContent = `${planName} — ${DURLABELS[selDur]}`;
+      document.getElementById('summaryPrice').textContent = fmt(price);
+    }
+
+    // ===== STEP NAVIGATION =====
+    window.goStep = function(n) {
+      [1,2,3].forEach(i => {
+        const panel = document.getElementById('step' + i);
+        panel.classList.toggle('active', i === n);
+      });
+      updateSteps(n);
+
+      if (n === 2) {
+        const price = getPrice(selPlan, selDur);
+        const planName = PLANS[selPlan]?.name;
+        document.getElementById('paySubtitle').innerHTML =
+          `Plano ${planName} ${DURLABELS[selDur]} — <strong>${fmt(price)}</strong>`;
+        setupPaymentPanels(price);
+      }
+    };
+
+    function updateSteps(active) {
+      [1,2,3].forEach(i => {
+        const sc = document.getElementById('sc' + i);
+        const sl = document.getElementById('sl' + i);
+        if (i < active) {
+          sc.className = 'step-circle done'; sc.textContent = '✓';
+          sl.className = 'step-label';
+        } else if (i === active) {
+          sc.className = 'step-circle active'; sc.textContent = String(i);
+          sl.className = 'step-label active';
+        } else {
+          sc.className = 'step-circle'; sc.textContent = String(i);
+          sl.className = 'step-label';
+        }
+      });
+      [1,2].forEach(i => {
+        const line = document.getElementById('line' + i);
+        if (line) line.className = 'step-line' + (active > i ? ' done' : '');
+      });
+    }
+
+    // ===== PAYMENT SETUP =====
+    function setupPaymentPanels(price) {
+      const priceStr = fmt(price);
+
+      // PIX
+      document.getElementById('pixValor').textContent = priceStr;
+      const pixCode = `00020126580014BR.GOV.BCB.PIX0136contato@tvfun.com.br520400005303986540${price.toFixed(2)}5802BR5913TVFunIPTV6008SaoPaulo62090505TVFUN6304ABCD`;
+      document.getElementById('pixChave').textContent = 'contato@tvfun.com.br';
+      document.getElementById('pixQrImg').src =
+        `https://api.qrserver.com/v1/create-qr-code/?size=160x160&bgcolor=ffffff&color=000000&data=${encodeURIComponent(pixCode)}`;
+      startPixTimer();
+
+      // Card parcelas
+      const sel = document.getElementById('cfParcelas');
+      sel.innerHTML = '';
+      for (let i = 1; i <= 12; i++) {
+        const v = (price / i).toFixed(2).replace('.', ',');
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i === 1 ? `1x de R$ ${v} (sem juros)` : `${i}x de R$ ${v}`;
+        sel.appendChild(opt);
+      }
+
+      // Boleto
+      document.getElementById('boletoValor').textContent = priceStr;
+      const due = new Date(Date.now() + 3 * 86_400_000);
+      document.getElementById('boletoVenc').textContent = due.toLocaleDateString('pt-BR');
+      // Fake code with price embedded
+      const cents = Math.round(price * 100);
+      document.getElementById('boletoCode').textContent =
+        `10497.91201 23000.100036 00603.240007 9 9123${String(cents).padStart(10,'0')}`;
+    }
+
+    // PIX countdown
+    function startPixTimer() {
+      clearInterval(pixTimer);
+      let secs = 599;
+      const el = document.getElementById('pixCountdown');
+      const tick = () => {
+        if (secs < 0) { clearInterval(pixTimer); el.textContent = 'Expirado'; return; }
+        const m = Math.floor(secs / 60), s = secs % 60;
+        el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        secs--;
+      };
+      tick();
+      pixTimer = setInterval(tick, 1000);
+    }
+
+    // ===== METHOD SELECT =====
+    window.selectMethod = function(m) {
+      selMeth = m;
+      ['pix','card','boleto'].forEach(k => {
+        document.getElementById('meth-' + k).classList.toggle('selected', k === m);
+        document.getElementById('pay-' + k).classList.toggle('active', k === m);
+      });
+    };
+
+    // ===== CARD FORMATTING =====
+    window.fmtCard = function(inp) {
+      let v = inp.value.replace(/\D/g,'').slice(0,16);
+      inp.value = v.replace(/(.{4})/g,'$1 ').trim();
+      document.getElementById('cdNumber').textContent =
+        (inp.value || '•••• •••• •••• ••••').padEnd(19, '•').replace(/[0-9]/g, d => d).slice(0,19);
+      const d = inp.value.replace(/\s/g,'');
+      document.getElementById('cdBrand').textContent =
+        d.startsWith('4') ? '💳 Visa' : d.startsWith('5') ? '💳 MC' : d.startsWith('3') ? '💳 Amex' : '💳';
+      updCard();
+    };
+
+    window.fmtExpiry = function(inp) {
+      let v = inp.value.replace(/\D/g,'').slice(0,4);
+      if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+      inp.value = v;
+      updCard();
+    };
+
+    window.updCard = function() {
+      const n = document.getElementById('cfNumber').value || '•••• •••• •••• ••••';
+      const nm = (document.getElementById('cfName').value || 'SEU NOME').toUpperCase().slice(0,22);
+      const ex = document.getElementById('cfExpiry').value || 'MM/AA';
+      const cv = document.getElementById('cfCvv').value || '•••';
+      document.getElementById('cdNumber').textContent = n || '•••• •••• •••• ••••';
+      document.getElementById('cdName').textContent = nm;
+      document.getElementById('cdExpiry').textContent = ex;
+      document.getElementById('cdCvv').textContent = cv;
+    };
+
+    window.flipCard = function(back) {
+      document.getElementById('cardVisual').classList.toggle('flipped', back);
+    };
+
+    // ===== COPY =====
+    window.copyPix = function() {
+      navigator.clipboard.writeText('contato@tvfun.com.br').catch(() => {});
+      toast('✓ Chave PIX copiada!');
+    };
+    window.copyBoleto = function() {
+      const code = document.getElementById('boletoCode').textContent;
+      navigator.clipboard.writeText(code).catch(() => {});
+      toast('✓ Código copiado!');
+    };
+
+    // ===== CONFIRM PAYMENT =====
+    // Webhook n8n que cria a preference do Checkout Pro do Mercado Pago
+    const MP_PREF_WEBHOOK = 'https://projeto01-n8n.grgyfj.easypanel.host/webhook/mp-criar-preferencia';
+
+    // Pagamento REAL: cria a preference no MP e redireciona pro checkout.
+    // A assinatura só é ativada pelo webhook do MP (após pagamento aprovado).
+    window.confirmPayment = async function() {
+      clearInterval(pixTimer);
+      const btn = document.getElementById('btnConfirmPix');
+      if (btn) { btn.disabled = true; btn.textContent = 'Indo ao Mercado Pago…'; }
+      try {
+        const price = getPrice(selPlan, selDur);
+        const [user, cred] = await Promise.all([
+          TVFunDB.getUser(),
+          TVFunDB.getActiveCredentials().catch(() => null),
+        ]);
+        const res = await fetch(MP_PREF_WEBHOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify({
+            plan: selPlan,
+            plan_name: PLANS[selPlan]?.name || selPlan,
+            duration: selDur,
+            price: price,
+            email: user?.email || '',
+            user_id: user?.id || '',
+            login: cred?.iptv_username || '',
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        const url = data.init_point || data.sandbox_init_point;
+        if (url) { window.location.href = url; return; }
+        toast('⚠ Não consegui iniciar o pagamento. Tente novamente.');
+      } catch (e) {
+        toast('⚠ Erro ao iniciar o pagamento: ' + e.message);
+      }
+      if (btn) { btn.disabled = false; btn.textContent = 'Pagar com Mercado Pago'; }
+    };
+
+    // URL do Webhook do n8n (gatilho do fluxo). Ajuste o /path conforme o node Webhook.
+    const N8N_WEBHOOK = 'https://projeto01-n8n.grgyfj.easypanel.host/webhook/tvfun-pagamento';
+
+    // Dispara o fluxo: cliente novo → criar teste (Sigma); já tem login → renovar (agente)
+    async function provisionAfterPayment(planKey, duration, subscriptionId) {
+      try {
+        const [user, cred] = await Promise.all([TVFunDB.getUser(), TVFunDB.getActiveCredentials()]);
+        const payload = {
+          action: (cred && cred.iptv_username) ? 'renovar' : 'criar_teste',
+          email: user?.email || '',
+          user_id: user?.id || '',
+          login: cred?.iptv_username || '',     // usado na renovação (cliente certo)
+          plano: planKey,
+          duracao: duration,
+          subscription_id: subscriptionId || '',
+        };
+        await fetch(N8N_WEBHOOK, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        console.log('[provision] gatilho n8n disparado:', payload.action);
+      } catch (e) { console.error('[provision] webhook n8n falhou:', e.message); }
+    }
+
+    // ===== INIT =====
+    selectPlan(selPlan);
+    selectDuration(selDur);
+    refreshPrices();
+    refreshSummary();
+  })();
+  </script>
+</body>
+</html>

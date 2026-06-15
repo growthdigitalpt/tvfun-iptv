@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciar Conta — TV Fun</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="conta.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase.js"></script>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">TV FUN</a>
+    <div class="nav-right">
+      <a href="index.html" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar ao início
+      </a>
+      <div class="avatar">R</div>
+    </div>
+  </nav>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="user-card">
+        <div class="avatar-big" id="ucAvatar">·</div>
+        <div>
+          <p class="uc-name" id="ucName">Carregando…</p>
+          <p class="uc-email" id="ucEmail">—</p>
+          <span class="plan-badge">—</span>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <a href="#" class="side-link active" data-sec="perfil">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Perfil
+        </a>
+        <a href="#" class="side-link" data-sec="plano">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Plano &amp; Cobrança
+        </a>
+        <a href="#" class="side-link" data-sec="seguranca">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Segurança
+        </a>
+        <a href="#" class="side-link" data-sec="preferencias">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M19.07 19.07A10 10 0 0 1 4.93 4.93"/></svg>
+          Preferências
+        </a>
+        <a href="#" class="side-link" data-sec="dispositivos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Dispositivos
+        </a>
+      </nav>
+
+      <a href="planos.html?action=renewal" class="btn-logout" style="display:flex;align-items:center;gap:8px;padding:10px 12px;color:var(--gray2);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-size:14px;text-decoration:none;margin:0 20px 8px;transition:border-color .2s,color .2s">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        Renovar / Trocar plano
+      </a>
+      <button class="btn-logout" id="btnLogout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair da conta
+      </button>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- ===== PERFIL ===== -->
+      <section class="sec active" id="sec-perfil">
+        <div class="sec-header">
+          <h1>Perfil</h1>
+          <p>Gerencie suas informações pessoais</p>
+        </div>
+
+        <div class="avatar-section">
+          <div class="avatar-preview" id="avatarPreview">R</div>
+          <div class="avatar-info">
+            <p class="avatar-label">Foto do perfil</p>
+            <div class="avatar-btns">
+              <button class="btn-outline" id="btnChangeAvatar">Alterar avatar</button>
+              <input type="file" id="avatarInput" accept="image/*" style="display:none">
+            </div>
+          </div>
+        </div>
+
+        <form class="form" id="formPerfil" novalidate>
+          <div class="form-row">
+            <div class="field">
+              <label>Nome completo</label>
+              <input type="text" id="fieldNome" value="" placeholder="Seu nome">
+            </div>
+            <div class="field">
+              <label>Nome de exibição</label>
+              <input type="text" id="fieldDisplay" value="" placeholder="Como quer ser chamado">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>E-mail</label>
+              <input type="email" id="fieldEmail" value="" placeholder="seu@email.com">
+            </div>
+            <div class="field">
+              <label>Telefone</label>
+              <input type="tel" id="fieldTel" value="" placeholder="+55 (00) 00000-0000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Data de nascimento</label>
+              <input type="date" id="fieldNasc" value="">
+            </div>
+            <div class="field">
+              <label>País</label>
+              <select id="fieldPais">
+                <option value="BR" selected>🇧🇷 Brasil</option>
+                <option value="PT">🇵🇹 Portugal</option>
+                <option value="US">🇺🇸 Estados Unidos</option>
+                <option value="ES">🇪🇸 Espanha</option>
+                <option value="AR">🇦🇷 Argentina</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Bio</label>
+            <textarea id="fieldBio" placeholder="Conte um pouco sobre você..." rows="3"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Salvar alterações</button>
+            <button type="button" class="btn-ghost" id="btnCancelPerfil">Cancelar</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ===== PLANO ===== -->
+      <section class="sec" id="sec-plano">
+        <div class="sec-header">
+          <h1>Plano &amp; Cobrança</h1>
+          <p>Gerencie sua assinatura e pagamentos</p>
+        </div>
+
+        <div class="plan-current" id="planCurrent">
+          <div class="plan-current-info">
+            <span class="plan-badge-lg" id="curPlanBadge">Carregando…</span>
+            <p class="plan-renew" id="curPlanRenew">Válido até <strong>—</strong></p>
+            <p class="plan-price" id="curPlanPrice">—</p>
+          </div>
+          <div class="payment-method">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <div>
+              <p class="pm-label">Forma de pagamento</p>
+              <p class="pm-value" id="curPayMethod">—</p>
+            </div>
+            <a class="btn-outline sm" href="planos.html?action=renewal">Renovar</a>
+          </div>
+        </div>
+
+        <!-- ===== ACESSO IPTV (credenciais reais) ===== -->
+        <div class="card" id="iptvAccessCard" style="display:none">
+          <div class="card-title">🔑 Seu acesso IPTV</div>
+          <div class="pref-list">
+            <div class="pref-item"><div><p class="pref-label">Usuário</p></div><span class="pref-select" id="iptvUser" style="cursor:default">—</span></div>
+            <div class="pref-item"><div><p class="pref-label">Senha</p></div><span class="pref-select" id="iptvPass" style="cursor:default">—</span></div>
+            <div class="pref-item"><div><p class="pref-label">Telas simultâneas</p></div><span class="pref-select" id="iptvScreens" style="cursor:default">—</span></div>
+            <div class="pref-item"><div><p class="pref-label">Validade do acesso</p></div><span class="pref-select" id="iptvExpiry" style="cursor:default">—</span></div>
+            <div class="pref-item"><div><p class="pref-label">Link da lista (m3u)</p><p class="pref-desc">Já carrega sozinho no app — copie só se precisar usar em outro player.</p></div><button class="btn-outline sm" id="btnCopyM3u">Copiar link</button></div>
+          </div>
+        </div>
+
+        <h2 class="sub-title">Mudar de plano</h2>
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div><p class="pref-label">Quer outro plano ou mais telas?</p><p class="pref-desc">Veja todos os planos e valores atualizados.</p></div>
+          <a class="btn-primary" href="planos.html?action=renewal" style="text-decoration:none">Ver planos &rarr;</a>
+        </div>
+
+        <div class="billing-section">
+          <div class="billing-header">
+            <h2 class="sub-title" style="margin:0">Histórico de cobranças</h2>
+          </div>
+          <table class="billing-table">
+            <thead>
+              <tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Status</th></tr>
+            </thead>
+            <tbody id="billingBody"><tr><td colspan="4" style="color:var(--gray)">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="danger-zone">
+          <h2 class="sub-title danger">Cancelar assinatura</h2>
+          <p>Ao cancelar, você perderá acesso ao conteúdo ao final do período atual (<span id="cancelExpiry">—</span>).</p>
+          <button class="btn-danger" id="btnCancelar">Cancelar assinatura</button>
+        </div>
+      </section>
+
+      <!-- ===== SEGURANÇA ===== -->
+      <section class="sec" id="sec-seguranca">
+        <div class="sec-header">
+          <h1>Segurança</h1>
+          <p>Mantenha sua conta protegida</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Alterar senha</div>
+          <form class="form" id="formSenha" novalidate>
+            <div class="field">
+              <label>Senha atual</label>
+              <div class="input-wrap">
+                <input type="password" id="fieldSenhaAtual" placeholder="••••••••">
+                <button type="button" class="show-pass" data-target="fieldSenhaAtual">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Nova senha</label>
+                <div class="input-wrap">
+                  <input type="password" id="fieldSenhaNova" placeholder="Mínimo 8 caracteres">
+                  <button type="button" class="show-pass" data-target="fieldSenhaNova">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+                <div class="pass-strength" id="passStrength"></div>
+              </div>
+              <div class="field">
+                <label>Confirmar nova senha</label>
+                <div class="input-wrap">
+                  <input type="password" id="fieldSenhaConf" placeholder="Repita a nova senha">
+                  <button type="button" class="show-pass" data-target="fieldSenhaConf">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">Atualizar senha</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <div>
+              <div class="card-title">Verificação em duas etapas</div>
+              <p class="card-desc">Adicione uma camada extra de segurança à sua conta.</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="toggle2fa">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </div>
+          <div class="twofa-detail hidden" id="twofa-detail">
+            <p class="info-text">✓ 2FA ativo — autenticação via aplicativo</p>
+            <button class="btn-outline sm">Configurar app autenticador</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <div class="card-title">Sessões ativas</div>
+            <button class="btn-danger sm" id="btnEncerrarTudo">Encerrar todas</button>
+          </div>
+          <div class="sessions-list" id="sessionsList">
+            <div class="session-item">
+              <div class="session-info"><p class="session-meta">Carregando sessão…</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PREFERÊNCIAS ===== -->
+      <section class="sec" id="sec-preferencias">
+        <div class="sec-header">
+          <h1>Preferências</h1>
+          <p>Personalize sua experiência de visualização</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Reprodução</div>
+          <div class="pref-list">
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">Qualidade de vídeo</p>
+                <p class="pref-desc">Define a resolução padrão de reprodução</p>
+              </div>
+              <select class="pref-select" id="prefQual">
+                <option>Automático</option>
+                <option>Ultra HD (4K)</option>
+                <option selected>Full HD (1080p)</option>
+                <option>HD (720p)</option>
+                <option>SD (480p)</option>
+              </select>
+            </div>
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">Reprodução automática</p>
+                <p class="pref-desc">Inicia automaticamente o próximo episódio</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked id="prefAutoplay">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">Pré-visualização ao passar o mouse</p>
+                <p class="pref-desc">Reproduz prévia dos títulos ao passar o cursor</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked id="prefPreview">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Idioma &amp; Legendas</div>
+          <div class="pref-list">
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">Idioma da interface</p>
+                <p class="pref-desc">Idioma exibido nos menus e textos</p>
+              </div>
+              <select class="pref-select" id="prefIdioma">
+                <option selected>Português (Brasil)</option>
+                <option>Português (Portugal)</option>
+                <option>English</option>
+                <option>Español</option>
+              </select>
+            </div>
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">Idioma de áudio padrão</p>
+                <p class="pref-desc">Preferência de idioma para o áudio</p>
+              </div>
+              <select class="pref-select" id="prefAudio">
+                <option selected>Português</option>
+                <option>Inglês</option>
+                <option>Espanhol</option>
+                <option>Original</option>
+              </select>
+            </div>
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">Legendas padrão</p>
+                <p class="pref-desc">Exibir legendas automaticamente</p>
+              </div>
+              <select class="pref-select" id="prefLeg">
+                <option selected>Desativado</option>
+                <option>Português</option>
+                <option>Inglês</option>
+                <option>Automático</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Notificações</div>
+          <div class="pref-list">
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">Novos lançamentos</p>
+                <p class="pref-desc">Receba alertas sobre novos filmes e séries</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked id="notifLanc">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">Recomendações personalizadas</p>
+                <p class="pref-desc">Sugestões baseadas no seu histórico</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked id="notifRec">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+            <div class="pref-item">
+              <div>
+                <p class="pref-label">E-mails promocionais</p>
+                <p class="pref-desc">Ofertas e promoções exclusivas</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="notifPromo">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <div>
+              <div class="card-title">Controle parental</div>
+              <p class="card-desc">Restringe conteúdo com base na classificação etária</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="prefParental">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </div>
+          <div class="parental-detail hidden" id="parentalDetail">
+            <div class="pref-item" style="margin-top:14px">
+              <div>
+                <p class="pref-label">Classificação máxima permitida</p>
+              </div>
+              <select class="pref-select" id="prefClass">
+                <option>Livre</option>
+                <option>10 anos</option>
+                <option selected>12 anos</option>
+                <option>14 anos</option>
+                <option>16 anos</option>
+                <option>18 anos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" id="btnSalvarPrefs">Salvar preferências</button>
+        </div>
+      </section>
+
+      <!-- ===== DISPOSITIVOS ===== -->
+      <section class="sec" id="sec-dispositivos">
+        <div class="sec-header">
+          <h1>Dispositivos</h1>
+          <p>Gerencie os aparelhos conectados à sua conta</p>
+        </div>
+
+        <div class="devices-info">
+          <span class="devices-count">Carregando dispositivos…</span>
+          <div class="devices-bar"><div class="devices-bar-fill" style="width:0%"></div></div>
+        </div>
+
+        <div class="devices-list" id="devicesList">
+          <div class="device-item">
+            <div class="device-info"><p class="device-meta">Carregando dispositivos…</p></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="conta.js"></script>
+</body>
+</html>

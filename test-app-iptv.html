@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TESTE APP IPTV — TV Fun</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js"></script>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav id="navbar" class="navbar">
+    <a href="#" class="nav-logo">TV FUN</a>
+
+    <!-- Abas de tipo de conteúdo -->
+    <div class="kind-tabs" id="kindTabs">
+      <button class="kind-tab active" data-kind="live">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Canais <span class="kind-count" id="countLive"></span>
+      </button>
+      <button class="kind-tab" data-kind="movie">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+        Filmes <span class="kind-count" id="countMovie"></span>
+      </button>
+      <button class="kind-tab" data-kind="series">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Séries <span class="kind-count" id="countSeries"></span>
+      </button>
+    </div>
+
+    <div class="nav-cats-wrap">
+      <button class="cat-arrow left" id="catLeft">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="nav-cats" id="navCats">
+        <button class="cat-pill active" data-group="all">Todos</button>
+        <button class="cat-pill" data-group="Favoritos">❤ Favoritos</button>
+        <button class="cat-pill" data-group="Recentes">🕐 Recentes</button>
+      </div>
+      <button class="cat-arrow right" id="catRight">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div class="nav-right">
+      <div class="search-wrap" id="searchWrap">
+        <input type="text" id="searchInput" class="search-field" placeholder="Buscar canais...">
+        <button class="icon-btn" id="searchToggle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+      </div>
+      <button class="btn-add-list" id="btnAddList">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar Lista
+      </button>
+      <div class="user-wrap">
+        <div class="avatar">R</div>
+        <div class="user-dropdown">
+          <div class="user-header">
+            <div class="avatar sm">R</div>
+            <div>
+              <div class="user-name">Rodrigo</div>
+              <div class="user-plan">Premium ✓</div>
+            </div>
+          </div>
+          <hr>
+          <a href="conta.html">Gerenciar conta</a>
+          <a href="planos.html?action=renewal" id="ddRenewPlan">Renovar / Trocar plano</a>
+          <a href="#" id="ddClearList">Remover lista atual</a>
+          <a href="privacidade.html">Política de privacidade</a>
+          <a href="#" id="ddLogout">Sair da conta</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+
+    <!-- Empty state -->
+    <div class="hero-empty" id="heroEmpty">
+      <!-- Fundo animado cativante -->
+      <div class="amb-bg" id="ambBg" aria-hidden="true">
+        <div class="amb-aurora"></div>
+        <div class="amb-beams"></div>
+        <div class="amb-wall" id="ambWall"></div>
+        <div class="amb-particles"></div>
+        <div class="amb-vignette"></div>
+      </div>
+      <div class="hero-empty-content">
+        <div class="tv-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <path d="M8 21h8M12 17v4"/>
+            <circle cx="12" cy="10" r="2" fill="currentColor" stroke="none" opacity=".4"/>
+            <path d="M8 7l4 3 4-3" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <h1>Comece grátis no TV Fun</h1>
+        <p>Mais de <strong>1.800 canais ao vivo</strong>, 30 mil filmes e 10 mil séries. Faça seu <strong>teste grátis</strong> e assista na hora — depois é só assinar para continuar.</p>
+
+        <div class="hero-empty-btns">
+          <button class="btn-trial" id="btnTrial">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="20" height="20"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Fazer Teste Grátis
+          </button>
+        </div>
+        <p class="trial-note">🎁 Teste <strong>único e gratuito</strong> de 6 horas, liberado uma vez por conta.</p>
+
+        <!-- Mensagem quando o teste já foi usado -->
+        <div class="trial-used hidden" id="trialUsed">
+          <p>✅ Você já usou seu teste grátis.</p>
+          <a href="planos.html?action=new" class="btn-trial">Assinar agora →</a>
+        </div>
+
+        <!-- Ações secundárias (importar manual / demo) -->
+        <div class="hero-empty-secondary">
+          <button class="link-btn" id="btnHeroImport">Adicionar lista M3U manual</button>
+          <span>·</span>
+          <button class="link-btn" id="btnLoadDemo">Ver demonstração</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Channel hero (shown when channels are loaded) -->
+    <div class="hero-channel hidden" id="heroChannel">
+      <div class="hero-media">
+        <video id="heroVideo" muted autoplay loop playsinline></video>
+        <div class="hero-overlay"></div>
+      </div>
+      <div class="hero-content" id="heroContent"></div>
+      <button class="mute-btn" id="muteBtn">
+        <svg id="muteIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <line x1="23" y1="9" x2="17" y2="15"/>
+          <line x1="17" y1="9" x2="23" y2="15"/>
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- CHANNEL GRID -->
+  <main class="main" id="mainContent"></main>
+
+  <!-- SEARCH RESULTS -->
+  <section class="search-results hidden" id="searchResults">
+    <h2 class="search-heading" id="searchHeading">Resultados para ""</h2>
+    <div class="search-grid" id="searchGrid"></div>
+    <div class="empty-list hidden" id="searchEmpty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <p>Nenhum canal encontrado.</p>
+    </div>
+  </section>
+
+  <!-- IMPORT MODAL -->
+  <div class="modal" id="importModal">
+    <div class="modal-bg" id="importBg"></div>
+    <div class="import-wrap">
+      <button class="modal-close" id="importClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="import-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <div>
+          <h2>Adicionar Lista IPTV</h2>
+          <p>Importe seus canais via URL ou arquivo</p>
+        </div>
+      </div>
+
+      <div class="import-tabs">
+        <button class="import-tab active" data-tab="url">🌐 URL da lista</button>
+        <button class="import-tab" data-tab="file">📁 Arquivo .m3u</button>
+        <button class="import-tab" data-tab="saved">📋 Listas salvas</button>
+      </div>
+
+      <div class="import-panel" id="tabUrl">
+        <label class="import-label">URL do arquivo M3U / M3U8</label>
+        <div class="url-row">
+          <input type="url" id="m3uUrl" class="import-input" placeholder="https://exemplo.com/lista.m3u">
+          <button class="btn-primary" id="btnLoadUrl">Carregar</button>
+        </div>
+        <p class="import-tip">💡 Cole a URL da sua lista M3U fornecida pelo seu provedor IPTV.</p>
+      </div>
+
+      <div class="import-panel hidden" id="tabFile">
+        <div class="file-drop" id="fileDrop">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p>Arraste seu arquivo <strong>.m3u</strong> ou <strong>.m3u8</strong> aqui</p>
+          <span>ou</span>
+          <button class="btn-outline" id="btnPickFile">Selecionar arquivo</button>
+          <input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain" style="display:none">
+        </div>
+        <p class="import-tip">💡 Suporte a listas grandes (centenas de milhares de itens) via URL ou arquivo .m3u / .m3u8.</p>
+      </div>
+
+      <div class="import-panel hidden" id="tabSaved">
+        <div class="saved-lists" id="savedLists">
+          <p class="no-saved">Nenhuma lista salva ainda.</p>
+        </div>
+      </div>
+
+      <div class="import-progress hidden" id="importProgress">
+        <div class="progress-bar-import">
+          <div class="progress-bar-fill" id="importProgressFill"></div>
+        </div>
+        <p id="importStatus">Carregando...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SÉRIE / EPISÓDIOS MODAL -->
+  <div class="modal" id="seriesModal">
+    <div class="modal-bg" id="seriesBg"></div>
+    <div class="series-wrap" id="seriesWrap">
+      <button class="modal-close" id="seriesClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div id="seriesContent"></div>
+    </div>
+  </div>
+
+  <!-- PLAYER MODAL -->
+  <div class="modal" id="playerModal">
+    <div class="modal-bg" id="playerBg"></div>
+    <div class="player-wrap" id="playerWrap">
+      <button class="modal-close" id="playerClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="player-top-bar" id="playerTopBar">
+        <div class="live-dot-lg" id="playerLiveDot"></div>
+        <span id="playerLiveTag">AO VIVO</span>
+        <span class="player-ch-name" id="playerChName">—</span>
+        <span class="player-ch-group" id="playerChGroup"></span>
+      </div>
+      <video id="videoEl" class="video-el">
+        <source id="videoSrc" src="" type="video/mp4">
+      </video>
+      <div class="player-loading" id="playerLoading"><div class="spinner"></div></div>
+      <div class="player-controls" id="playerControls">
+        <div class="p-progress" id="pProgress">
+          <div class="p-track">
+            <div class="p-buf" id="pBuf"></div>
+            <div class="p-played" id="pPlayed"></div>
+            <div class="p-thumb" id="pThumb"></div>
+            <div class="p-seek-tip" id="pSeekTip">0:00</div>
+          </div>
+          <span class="p-time" id="pTime">AO VIVO</span>
+        </div>
+        <div class="p-row">
+          <div class="p-left">
+            <button class="p-btn" id="btnPlay">
+              <svg id="iconPlay" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <button class="p-btn" id="btnRew" title="-10s">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+            </button>
+            <button class="p-btn" id="btnFwd" title="+10s">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-3.57"/></svg>
+            </button>
+            <div class="vol-wrap">
+              <button class="p-btn" id="btnVol">
+                <svg id="iconVol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                </svg>
+              </button>
+              <input type="range" class="vol-range" id="volRange" min="0" max="1" step="0.05" value="1">
+            </div>
+            <div class="live-tag"><div class="live-dot"></div>AO VIVO</div>
+            <span class="p-title" id="pTitle"></span>
+          </div>
+          <div class="p-right">
+            <button class="p-btn fav-btn" id="btnFavPlayer" title="Favoritar canal">
+              <svg id="iconFav" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+            <button class="p-btn" id="btnFS">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
