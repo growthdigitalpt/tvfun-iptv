@@ -2,6 +2,6 @@
 FROM node:20-alpine
 WORKDIR /app
 COPY . .
-ENV PORT=3133
-EXPOSE 3133
+ENV PORT=80
+EXPOSE 80
 CMD ["node", "server.js"]
