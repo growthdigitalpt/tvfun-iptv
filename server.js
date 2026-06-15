@@ -158,7 +158,8 @@ async function handleList(req, res, urlObj) {
     const proc = await getProcessed(m3uUrl);
 
     if (kind === 'series') {
-      // agrupa por nome de série (cada série = 1 card)
+      // agrupa por nome de série (cada série = 1 card) + capa real da API
+      const covers = await getApiCovers(m3uUrl);
       const all = [...proc.seriesIndex.values()];
       const perGroupCount = new Map();
       const out = [];
@@ -166,7 +167,8 @@ async function handleList(req, res, urlObj) {
         const g = s.group || 'Outros';
         const c = perGroupCount.get(g) || 0;
         if (c < perGroup && out.length < limit) {
-          out.push({ name: s.series, series: s.series, group: g, logo: s.logo, kind: 'series', episodeCount: s.episodes.length });
+          const capa = covers.series.get(normalizeName(s.series)) || s.logo;
+          out.push({ name: s.series, series: s.series, group: g, logo: capa, kind: 'series', episodeCount: s.episodes.length });
           perGroupCount.set(g, c + 1);
         }
       }
@@ -179,6 +181,11 @@ async function handleList(req, res, urlObj) {
     // live ou movie
     const items = proc.byKind[kind] || [];
     const { out, groups } = groupAndLimit(items, limit, perGroup);
+    if (kind === 'movie') {
+      // capa real da API (por stream_id extraído da URL)
+      const covers = await getApiCovers(m3uUrl);
+      for (const o of out) { const id = vodIdFromUrl(o.url); const capa = id && covers.vod.get(id); if (capa) o.logo = capa; }
+    }
     json(res, 200, { kind, counts: proc.counts, total: items.length, returned: out.length, groups, channels: out });
   } catch (e) {
     console.error('[list] erro:', e.message);
@@ -336,6 +343,50 @@ async function handleInfo(req, res, urlObj) {
 
 function normalizeName(s) {
   return s.toLowerCase().replace(/\s*[\(\[]\d{4}[\)\]]\s*/g, ' ').replace(/[^\w\sáàâãéêíóôõúç]/gi, '').replace(/\s+/g, ' ').trim();
+}
+
+// ─── Capas reais da API Xtream para a HOME ───────────────────
+// A M3U traz tvg-logo genérico/errado; a API tem a capa certa por título.
+const coverCache = new Map(); // listUrl → { vod: Map(stream_id→capa), series: Map(nomeNorm→capa) }
+function coverFile(url) { return path.join(CACHE_DIR, crypto.createHash('sha1').update('covers:' + url).digest('hex') + '.json'); }
+function vodIdFromUrl(url) { const m = (url || '').match(/\/(\d+)\.\w+(\?|$)/); return m ? m[1] : null; }
+async function fetchWithTimeout(url, ms = 15000) {
+  const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
+  try { return await fetch(url, { headers: { 'User-Agent': UA }, signal: c.signal }); } finally { clearTimeout(t); }
+}
+
+async function getApiCovers(listUrl) {
+  if (coverCache.has(listUrl)) return coverCache.get(listUrl);
+  // 1) cache em disco
+  try {
+    const st = fs.statSync(coverFile(listUrl));
+    if (Date.now() - st.mtimeMs < DISK_TTL) {
+      const j = JSON.parse(fs.readFileSync(coverFile(listUrl), 'utf8'));
+      const got = { vod: new Map(j.vod), series: new Map(j.series) };
+      coverCache.set(listUrl, got);
+      return got;
+    }
+  } catch {}
+  // 2) busca da API Xtream (get_vod_streams + get_series) em paralelo
+  const { base } = xtreamBase(listUrl);
+  const vod = new Map(), series = new Map();
+  await Promise.all([
+    (async () => {
+      try { const r = await fetchWithTimeout(`${base}&action=get_vod_streams`);
+        for (const v of (await r.json()) || []) { const ic = v.stream_icon || v.cover || ''; if (v.stream_id != null && ic) vod.set(String(v.stream_id), ic); }
+      } catch (e) { console.error('[covers] vod:', e.message); }
+    })(),
+    (async () => {
+      try { const r = await fetchWithTimeout(`${base}&action=get_series`);
+        for (const s of (await r.json()) || []) { const c = s.cover || ''; if (c) series.set(normalizeName(s.name || s.title || ''), c); }
+      } catch (e) { console.error('[covers] series:', e.message); }
+    })(),
+  ]);
+  const got = { vod, series };
+  coverCache.set(listUrl, got);
+  try { fs.writeFileSync(coverFile(listUrl), JSON.stringify({ vod: [...vod], series: [...series] })); } catch {}
+  console.log(`[covers] ${vod.size} filmes, ${series.size} séries indexados da API`);
+  return got;
 }
 
 // ─── Provisionamento via agente browser-use (Gradio) ─────────

@@ -303,6 +303,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
   // ===== CRONÔMETRO DO TESTE GRÁTIS (persistente: baseado em expires_at) =====
   let _trialTimer = null;
   async function setupTrialCountdown() {
+    return; // popup/chip do timer removidos da home — o status do teste/plano fica só na Conta/Planos
     if (typeof TVFunDB === 'undefined') return;
     let cred = null;
     try { cred = await TVFunDB.getActiveCredentials(); } catch {}
@@ -1057,9 +1058,21 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
           : '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>';
     }
 
-    document.getElementById('btnFS').addEventListener('click', () => {
+    document.getElementById('btnFS').addEventListener('click', async () => {
       const w = document.getElementById('playerWrap');
-      document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen?.();
+      if (document.fullscreenElement) {
+        (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+      } else {
+        try { await (w.requestFullscreen?.() || w.webkitRequestFullscreen?.()); } catch {}
+        // Celular: deita a tela (90°), preenche tudo e segue o giroscópio (paisagem nos dois sentidos)
+        if (matchMedia('(pointer: coarse)').matches && screen.orientation && screen.orientation.lock) {
+          try { await screen.orientation.lock('landscape'); } catch {}
+        }
+      }
+    });
+    // Ao sair do fullscreen (botão, gesto do sistema ou ESC) → libera a orientação
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) { try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch {} }
     });
 
     document.getElementById('btnFavPlayer').addEventListener('click', () => {
@@ -1466,13 +1479,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     const avatarEl = document.querySelector('.avatar:not(.sm)');
     if (avatarEl) avatarEl.textContent = displayName[0].toUpperCase();
 
-    // Banner de plano expirado
-    if (!sub) {
-      const banner = document.createElement('div');
-      banner.style.cssText = 'position:fixed;top:60px;left:0;right:0;z-index:800;background:rgba(229,9,20,.9);backdrop-filter:blur(8px);color:#fff;text-align:center;padding:10px 20px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:14px';
-      banner.innerHTML = '⚠ Seu plano expirou ou não está ativo. <a href="planos.html?action=renewal" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:20px;font-weight:700;text-decoration:none">Renovar agora →</a>';
-      document.body.insertBefore(banner, document.body.firstChild);
-    }
+    // (Removido) Banner de plano expirado na home — o status do plano aparece só na Conta/Planos.
   }
 
   // ===== INIT =====
