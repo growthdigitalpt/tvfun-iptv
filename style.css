@@ -879,7 +879,7 @@ input { font-family: inherit; }
   .btn-trial { padding: 13px 26px; font-size: 15px; }
 
   /* Conteúdo / linhas / cards */
-  .main { margin-top: -40px; padding-bottom: 78px; }   /* espaço p/ a barra inferior de abas */
+  .main { margin-top: -40px; padding: 0 0 78px; }   /* sem padding lateral → lista de canais edge-to-edge (cards mantêm o seu via .row) */
   .row { padding: 0 14px; margin-bottom: 24px; }
   .row-title { font-size: 15px; }
   .scroll-arrow { display: none; }
@@ -895,13 +895,17 @@ input { font-family: inherit; }
   .poster-name { font-size: 12px; }
 
   /* Lista de canais (pay-per-view) */
-  .chl-section { padding: 0 14px; }
-  .chl-row { padding: 10px 12px; gap: 10px; }
-  .chl-num { width: 26px; font-size: 12px; }
+  /* Lista de canais: ocupa a largura toda (edge-to-edge), sem card recuado */
+  .chl-section { padding: 0; }
+  .chl-head { padding: 0 14px; }
+  .chl-list { border-radius: 0; border-left: 0; border-right: 0; }
+  .chl-row { padding: 10px 14px; gap: 12px; }
+  .chl-num { width: 24px; font-size: 12px; }
   .chl-thumb { width: 46px; height: 46px; }
-  .chl-name { font-size: 13px; }
+  .chl-name { font-size: 14px; }            /* maior — agora há espaço */
   .chl-group { font-size: 11px; }
-  .chl-play, .chl-fav { width: 38px; height: 38px; }   /* alvo de toque ≥38px */
+  .chl-play { display: none; }              /* tocar na linha já abre o canal → play redundante no toque */
+  .chl-fav { width: 40px; height: 40px; }   /* alvo de toque confortável */
 
   /* Player: cobre a tela inteira, fundo SÓLIDO e controles SEMPRE visíveis
      (no celular não existe "hover", então os controles precisam ficar fixos) */
