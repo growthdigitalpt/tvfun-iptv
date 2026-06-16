@@ -212,13 +212,15 @@
   (async function() {
     'use strict';
 
-    // Já logado?
-    const user = await TVFunDB.getUser();
-    if (user) {
-      const active = await TVFunDB.isPlanActive();
-      window.location.href = active ? 'index.html' : 'planos.html';
-      return;
-    }
+    // Já logado? Vai direto pra principal se tiver assinatura válida (ou teste ativo); senão, planos.
+    try {
+      const user = await TVFunDB.getUser();
+      if (user) {
+        const [sub, cred] = await Promise.all([TVFunDB.getActiveSubscription(), TVFunDB.getActiveCredentials()]);
+        window.location.href = (sub || cred) ? 'index.html' : 'planos.html';
+        return;
+      }
+    } catch {}
 
     // Tabs
     const tabEntrar = document.getElementById('tabEntrar');

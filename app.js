@@ -440,6 +440,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     // Special rows always shown (if they have content)
     if (group === 'all') {
+      const continuar = (state.progressList || []).filter(p => (p.kind || 'movie') === kind).map(p => ({ ...p, _resume: true }));
+      if (continuar.length) buildRow('▶ Continuar assistindo', continuar, wrap);
       if (recents.length) buildRow('🕐 Recentes', recents, wrap);
       if (favs.length) buildRow('❤ Favoritos', favs, wrap);
     }
@@ -655,7 +657,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       <div class="poster-name">${dispName}</div>`;
 
     // Clique: filme → página de detalhes; série → detalhes/episódios; canal → player
-    const open = (e) => { e.stopPropagation(); isSeries ? openSeries(ch) : (kind === 'movie' ? openMovieDetail(ch) : openPlayer(ch)); };
+    const open = (e) => { e.stopPropagation(); if (ch._resume) return openPlayer(ch); isSeries ? openSeries(ch) : (kind === 'movie' ? openMovieDetail(ch) : openPlayer(ch)); };
     card.querySelector('.card-img').addEventListener('click', open);
     card.querySelector('.poster-play').addEventListener('click', open);
 
@@ -996,7 +998,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     const videoEl = document.getElementById('videoEl');
     // salva a posição final (continuar assistindo entre dispositivos)
     if (state.currentIsVOD && state.currentChannel && typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress && videoEl.currentTime > 30) {
-      TVFunDB.saveProgress(state.currentChannel.id || state.currentChannel.name, videoEl.currentTime, videoEl.duration).catch(() => {});
+      TVFunDB.saveProgress(state.currentChannel, videoEl.currentTime, videoEl.duration).catch(() => {});
     }
     videoEl.pause(); videoEl.src = '';
     state.playerInst = destroyPlayer(state.playerInst);
@@ -1054,7 +1056,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
         if (video.currentTime - (state._lastSave || 0) > 10) {
           state._lastSave = video.currentTime;
           const ch = state.currentChannel;
-          if (ch && typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress) TVFunDB.saveProgress(ch.id || ch.name, video.currentTime, video.duration).catch(() => {});
+          if (ch && typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress) TVFunDB.saveProgress(ch, video.currentTime, video.duration).catch(() => {});
         }
       }
     });
@@ -1562,14 +1564,16 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       const user = await TVFunDB.requireAuth();
       if (!user) return; // redirect em andamento
       // Preload Supabase data em paralelo
-      const [favIds, history, lists] = await Promise.all([
+      const [favIds, history, lists, progress] = await Promise.all([
         TVFunDB.getFavoriteIds(),
         TVFunDB.getHistory(12),
         TVFunDB.getLists(),
+        TVFunDB.getProgressList ? TVFunDB.getProgressList(12) : [],
       ]);
       state.favIds = favIds;
       state.recentChannels = history;
       state.savedLists = lists;
+      state.progressList = progress || [];
     } else {
       // Fallback localStorage
       state.favIds = store.favorites();

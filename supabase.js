@@ -349,12 +349,15 @@ const TVFunDB = {
 
   // ═══════════════ PROGRESSO (continuar assistindo — entre dispositivos) ═══════════════
 
-  async saveProgress(contentId, seconds, duration) {
+  async saveProgress(channel, seconds, duration) {
     const user = await this.getUser();
-    if (!user || !contentId) return;
+    if (!user || !channel) return;
+    const cid = String(channel.id || channel.name);
     try {
       await _sb.from('watch_progress').upsert({
-        user_id: user.id, content_id: String(contentId),
+        user_id: user.id, content_id: cid,
+        name: channel.name || '', logo: channel.logo || '', group_name: channel.group || '',
+        url: channel.url || '', kind: channel.kind || 'movie',
         position_seconds: Math.floor(seconds || 0), duration_seconds: Math.floor(duration || 0),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,content_id' });
@@ -370,6 +373,20 @@ const TVFunDB = {
         .eq('user_id', user.id).eq('content_id', String(contentId)).maybeSingle();
       return data || null;
     } catch { return null; }
+  },
+
+  // Lista "continuar assistindo" (em andamento, mais recentes primeiro)
+  async getProgressList(limit = 12) {
+    const user = await this.getUser();
+    if (!user) return [];
+    try {
+      const { data } = await _sb.from('watch_progress')
+        .select('*').eq('user_id', user.id)
+        .order('updated_at', { ascending: false }).limit(limit);
+      return (data || [])
+        .filter(r => r.position_seconds > 30 && (!r.duration_seconds || r.position_seconds < r.duration_seconds * 0.95))
+        .map(r => ({ id: r.content_id, name: r.name, logo: r.logo, group: r.group_name, url: r.url, kind: r.kind || 'movie', position: r.position_seconds, duration: r.duration_seconds }));
+    } catch { return []; }
   },
 
   // ═══════════════ AUTH GUARD ═══════════════
