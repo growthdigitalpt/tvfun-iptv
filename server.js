@@ -156,6 +156,7 @@ async function handleList(req, res, urlObj) {
 
   try {
     const proc = await getProcessed(m3uUrl);
+    getApiCovers(m3uUrl).catch(() => {});  // pré-aquece as capas em paralelo (acelera Filmes/Séries)
 
     if (kind === 'series') {
       // agrupa por nome de série (cada série = 1 card) + capa real da API
@@ -355,8 +356,15 @@ async function fetchWithTimeout(url, ms = 15000) {
   try { return await fetch(url, { headers: { 'User-Agent': UA }, signal: c.signal }); } finally { clearTimeout(t); }
 }
 
+const coverInFlight = new Map();
 async function getApiCovers(listUrl) {
   if (coverCache.has(listUrl)) return coverCache.get(listUrl);
+  if (coverInFlight.has(listUrl)) return coverInFlight.get(listUrl);  // dedupe: 1 busca só
+  const job = _buildApiCovers(listUrl);
+  coverInFlight.set(listUrl, job);
+  try { return await job; } finally { coverInFlight.delete(listUrl); }
+}
+async function _buildApiCovers(listUrl) {
   // 1) cache em disco
   try {
     const st = fs.statSync(coverFile(listUrl));

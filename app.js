@@ -999,7 +999,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     clearTimeout(state.hideCtrlTimer);
     state.hideCtrlTimer = setTimeout(() => {
       if (!document.getElementById('videoEl').paused) wrap.classList.remove('ctrl-on');  // some sozinho só se estiver tocando
-    }, 3500);
+    }, 3000);
   }
   function hideControls() {
     document.getElementById('playerWrap').classList.remove('ctrl-on');
@@ -1286,6 +1286,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     const entry = { src, name: name.replace(/\.m3u8?$/, ''), count, date: new Date().toLocaleDateString('pt-BR') };
     if (existing >= 0) lists[existing] = entry; else lists.unshift(entry);
     store.saveLists(lists.slice(0, 10));
+    // Sincroniza listas por URL no Supabase (carrega sozinha em qualquer dispositivo)
+    if (typeof TVFunDB !== 'undefined' && /^https?:\/\//i.test(src)) TVFunDB.saveList(entry.name, src, count).catch(() => {});
   }
 
   function showImportProgress(msg, pct) {
@@ -1573,9 +1575,10 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       renderAll();
       return;
     }
-    // Lista salva (importada antes) com URL → carrega sozinha, sem pedir import de novo
-    const savedLists = state.savedLists || store.lists();
-    const lastUrl = savedLists && savedLists[0] && /^https?:\/\//i.test(savedLists[0].src || '') ? savedLists[0].src : null;
+    // Lista salva (Supabase = entre dispositivos, ou local) com URL → carrega sozinha
+    const supaLists = (state.savedLists && state.savedLists.length) ? state.savedLists : [];
+    const lists = supaLists.length ? supaLists : store.lists();
+    const lastUrl = (lists || []).map(l => l && (l.url || l.src)).find(u => /^https?:\/\//i.test(u || ''));
     if (lastUrl) { showEmpty(); loadM3UFromUrl(lastUrl); return; }
     showEmpty();
   }
