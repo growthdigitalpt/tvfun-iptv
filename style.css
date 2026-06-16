@@ -502,6 +502,41 @@ input { font-family: inherit; }
 .chl-row:hover .chl-play { background: var(--red); color: #fff; }
 .chl-fav:hover { color: #fff; }
 .chl-fav.active { color: var(--red); }
+
+/* ===== Canais em 2 colunas (categorias | canais) ===== */
+.chl-2col { display: flex; align-items: flex-start; gap: 0; padding: 0 52px 40px; }
+.chl-cats {
+  width: 240px; flex-shrink: 0; position: sticky; top: calc(var(--nav-h) + 10px);
+  max-height: calc(100vh - var(--nav-h) - 30px); overflow-y: auto;
+  background: var(--bg2); border: 1px solid rgba(255,255,255,.06); border-radius: 12px;
+}
+.chl-channels { flex: 1; min-width: 0; padding-left: 16px; }
+.chl-cat {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; padding: 12px 15px; background: none; border: none;
+  border-bottom: 1px solid rgba(255,255,255,.04); color: var(--gray2);
+  font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; transition: background .12s;
+}
+.chl-cat:last-child { border-bottom: none; }
+.chl-cat:hover { background: rgba(255,255,255,.04); color: #fff; }
+.chl-cat.active { background: rgba(229,9,20,.14); color: #fff; box-shadow: inset 3px 0 0 var(--red); }
+.chl-cat-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chl-cat-count { color: var(--gray); font-size: 11px; flex-shrink: 0; background: rgba(255,255,255,.07); padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+.chl-back { display: none; }
+
+@media (max-width: 760px) {
+  .chl-2col { display: block; padding: 0; }
+  .chl-cats { width: 100%; position: static; max-height: none; border-radius: 0; border-left: 0; border-right: 0; }
+  .chl-channels { padding-left: 0; display: none; }
+  .chl-2col.show-channels .chl-cats { display: none; }
+  .chl-2col.show-channels .chl-channels { display: block; }
+  .chl-cat { padding: 14px 16px; font-size: 15px; }
+  .chl-back {
+    display: flex; align-items: center; gap: 6px; width: 100%;
+    padding: 13px 14px; background: rgba(12,12,15,.96); border: none; border-bottom: 1px solid rgba(255,255,255,.06);
+    color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; position: sticky; top: 0; z-index: 3;
+  }
+}
 @media (max-width: 860px) { .chl-section { padding: 0 16px; } .chl-group { display: none; } .chl-live { display: none; } }
 
 /* ====== SEARCH RESULTS ====== */

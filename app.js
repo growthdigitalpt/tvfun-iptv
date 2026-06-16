@@ -508,47 +508,56 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
   }
 
   // ===== LISTA DE CANAIS (estilo guia de TV / pay-per-view) =====
+  // Canais em 2 colunas: categorias (esquerda) | canais da categoria (direita).
+  // No celular vira mestre-detalhe: lista de categorias → toca → abre os canais (com voltar).
   function renderLiveList(wrap) {
     const channels = state.channels;
-    const group = state.activeGroup;
     const favs = channels.filter(c => isFav(c));
     const recents = getRecentChannels().filter(r => (r.kind || 'live') === 'live');
 
-    const section = (title, items) => {
-      if (!items.length) return;
-      const sec = document.createElement('div');
-      sec.className = 'chl-section';
-      sec.innerHTML = `
-        <div class="chl-head"><h2 class="row-title">${title}</h2><span class="row-count">${items.length} ${items.length === 1 ? 'canal' : 'canais'}</span></div>
-        <div class="chl-list"></div>`;
-      const list = sec.querySelector('.chl-list');
-      let rendered = 0;
-      const renderBatch = () => { const end = Math.min(rendered + 40, items.length); for (; rendered < end; rendered++) list.appendChild(buildChannelRow(items[rendered], rendered + 1)); };
-      // monta a primeira leva só quando a seção chega perto da viewport
-      if ('IntersectionObserver' in window) {
-        const io = new IntersectionObserver((es, obs) => { es.forEach(e => { if (e.isIntersecting) { renderBatch(); obs.disconnect(); } }); }, { rootMargin: '400px' });
-        io.observe(sec);
-      } else { renderBatch(); }
-      // carrega mais ao rolar a janela perto do fim da seção
-      const onScroll = () => {
-        if (rendered >= items.length) { window.removeEventListener('scroll', onScroll); return; }
-        const r = sec.getBoundingClientRect();
-        if (r.bottom < window.innerHeight + 800) renderBatch();
-      };
-      window.addEventListener('scroll', onScroll, { passive: true });
-      wrap.appendChild(sec);
-    };
-
-    if (group === 'all') {
-      if (recents.length) section('🕐 Recentes', recents);
-      if (favs.length) section('❤ Favoritos', favs);
-    }
-    if (group === 'Favoritos') { section('❤ Favoritos', favs); return; }
-    if (group === 'Recentes') { section('🕐 Recentes', recents); return; }
-
     const grouped = {};
     channels.forEach(c => { (grouped[c.group] = grouped[c.group] || []).push(c); });
-    Object.keys(grouped).sort().forEach(g => { if (group !== 'all' && g !== group) return; section(g, grouped[g]); });
+    const cats = [];
+    if (recents.length) cats.push({ key: 'Recentes', label: '🕐 Recentes', items: recents });
+    if (favs.length) cats.push({ key: 'Favoritos', label: '❤ Favoritos', items: favs });
+    Object.keys(grouped).sort().forEach(g => cats.push({ key: g, label: g, items: grouped[g] }));
+
+    if (!cats.length) { wrap.innerHTML = '<div class="empty-list" style="padding:50px;text-align:center;color:var(--gray)">Nenhum canal nesta lista.</div>'; return; }
+
+    wrap.innerHTML =
+      '<div class="chl-2col" id="chl2col">' +
+        '<div class="chl-cats" id="chlCats"></div>' +
+        '<div class="chl-channels" id="chlChannels">' +
+          '<button class="chl-back" id="chlBack">‹ Categorias</button>' +
+          '<div class="chl-list" id="chlList"></div>' +
+        '</div>' +
+      '</div>';
+    const col = document.getElementById('chl2col');
+    const catsEl = document.getElementById('chlCats');
+    const listEl = document.getElementById('chlList');
+    document.getElementById('chlBack').addEventListener('click', () => { col.classList.remove('show-channels'); window.scrollTo({ top: 0 }); });
+
+    const openCat = (cat, btn) => {
+      catsEl.querySelectorAll('.chl-cat').forEach(x => x.classList.remove('active'));
+      btn.classList.add('active');
+      const frag = document.createDocumentFragment();
+      cat.items.forEach((ch, i) => frag.appendChild(buildChannelRow(ch, i + 1)));
+      listEl.innerHTML = '';
+      listEl.appendChild(frag);
+    };
+
+    const preKey = (state.activeGroup && state.activeGroup !== 'all') ? state.activeGroup : cats[0].key;
+    cats.forEach((cat) => {
+      const btn = document.createElement('button');
+      btn.className = 'chl-cat';
+      btn.tabIndex = 0;
+      btn.innerHTML = '<span class="chl-cat-name">' + cat.label + '</span><span class="chl-cat-count">' + cat.items.length + '</span>';
+      btn.addEventListener('click', () => { openCat(cat, btn); col.classList.add('show-channels'); window.scrollTo({ top: 0 }); });
+      catsEl.appendChild(btn);
+    });
+    // abre a categoria inicial (no desktop as 2 colunas aparecem; no celular fica nas categorias até tocar)
+    const startIdx = Math.max(0, cats.findIndex(c => c.key === preKey));
+    if (catsEl.children[startIdx]) openCat(cats[startIdx], catsEl.children[startIdx]);
   }
 
   function buildChannelRow(ch, idx) {
@@ -900,7 +909,19 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     document.getElementById('playerLoading').classList.add('active');
 
     state.reconnectAttempts = 0;
+    state._lastSave = 0;
     startPlayback(ch, isVOD);
+
+    // Continuar de onde parou (VOD, sincronizado entre dispositivos)
+    if (isVOD && typeof TVFunDB !== 'undefined' && TVFunDB.getProgress) {
+      TVFunDB.getProgress(ch.id || ch.name).then(p => {
+        if (!p || !p.position_seconds || p.position_seconds < 30) return;
+        if (p.duration_seconds && p.position_seconds > p.duration_seconds * 0.95) return; // quase no fim → recomeça
+        const v = document.getElementById('videoEl');
+        const seek = () => { if (v.duration && p.position_seconds < v.duration - 5) { v.currentTime = p.position_seconds; showToast('▶ Continuando de ' + formatTime(p.position_seconds)); } };
+        v.readyState >= 1 && v.duration ? seek() : v.addEventListener('loadedmetadata', seek, { once: true });
+      }).catch(() => {});
+    }
 
     updateFavBtn();
     resetHideCtrl();
@@ -973,6 +994,10 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
   function closePlayer() {
     const videoEl = document.getElementById('videoEl');
+    // salva a posição final (continuar assistindo entre dispositivos)
+    if (state.currentIsVOD && state.currentChannel && typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress && videoEl.currentTime > 30) {
+      TVFunDB.saveProgress(state.currentChannel.id || state.currentChannel.name, videoEl.currentTime, videoEl.duration).catch(() => {});
+    }
     videoEl.pause(); videoEl.src = '';
     state.playerInst = destroyPlayer(state.playerInst);
     clearTimeout(state.hideCtrlTimer);
@@ -1023,9 +1048,14 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       if (video.buffered.length) {
         buf.style.width = (video.buffered.end(video.buffered.length - 1) / video.duration * 100) + '%';
       }
-      // VOD mostra tempo decorrido / total
+      // VOD mostra tempo decorrido / total + salva progresso a cada ~10s (continuar assistindo)
       if (state.currentIsVOD) {
         document.getElementById('pTime').textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+        if (video.currentTime - (state._lastSave || 0) > 10) {
+          state._lastSave = video.currentTime;
+          const ch = state.currentChannel;
+          if (ch && typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress) TVFunDB.saveProgress(ch.id || ch.name, video.currentTime, video.duration).catch(() => {});
+        }
       }
     });
     video.addEventListener('play', () => { iconPlay.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'; });

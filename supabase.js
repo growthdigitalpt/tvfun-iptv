@@ -347,6 +347,31 @@ const TVFunDB = {
     await _sb.from('m3u_lists').delete().eq('id', listId);
   },
 
+  // ═══════════════ PROGRESSO (continuar assistindo — entre dispositivos) ═══════════════
+
+  async saveProgress(contentId, seconds, duration) {
+    const user = await this.getUser();
+    if (!user || !contentId) return;
+    try {
+      await _sb.from('watch_progress').upsert({
+        user_id: user.id, content_id: String(contentId),
+        position_seconds: Math.floor(seconds || 0), duration_seconds: Math.floor(duration || 0),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,content_id' });
+    } catch {}
+  },
+
+  async getProgress(contentId) {
+    const user = await this.getUser();
+    if (!user || !contentId) return null;
+    try {
+      const { data } = await _sb.from('watch_progress')
+        .select('position_seconds,duration_seconds')
+        .eq('user_id', user.id).eq('content_id', String(contentId)).maybeSingle();
+      return data || null;
+    } catch { return null; }
+  },
+
   // ═══════════════ AUTH GUARD ═══════════════
 
   /** Mostra loader, verifica sessão, redireciona se não logado */
