@@ -1054,3 +1054,13 @@ html.tv .card:focus-visible, html.tv .chl-row:focus-visible { outline-width: 4px
 .resume-btn:hover { background: rgba(255,255,255,.1); }
 .resume-btn.primary { background: var(--red); border-color: var(--red); }
 .resume-btn.primary:hover { filter: brightness(1.1); }
+
+/* Botão "Continuar assistindo" no topo da série/filme */
+.btn-continue {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 14px; padding: 11px 22px; border-radius: 8px;
+  background: var(--red); color: #fff; border: none;
+  font-size: 15px; font-weight: 800; cursor: pointer; transition: filter .15s;
+}
+.btn-continue:hover { filter: brightness(1.1); }
+.btn-continue svg { width: 18px; height: 18px; flex-shrink: 0; }

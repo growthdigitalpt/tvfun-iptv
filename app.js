@@ -729,10 +729,13 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
         ${info.director ? `<div class="detail-credits"><strong>Direção:</strong> ${info.director}</div>` : ''}
       </div>`;
 
-    document.getElementById('detailPlay').addEventListener('click', () => {
+    document.getElementById('detailPlay').addEventListener('click', async () => {
       closeSeries();
-      askResume({ name: info.name || item.name, url: item.url, group: item.group, logo: poster, kind: 'movie', id: item.url });
+      const m = { name: info.name || item.name, url: item.url, group: item.group, logo: poster, kind: 'movie', id: item.url };
+      openPlayer(m, await getResumePos(m.id));   // filme continua direto de onde parou
     });
+    // Rótulo: se há progresso, mostra "Continuar assistindo"
+    getResumePos(item.url).then(pos => { if (pos > 0) { const b = document.getElementById('detailPlay'); if (b) b.innerHTML = b.innerHTML.replace('Assistir', 'Continuar · ' + formatTime(pos)); } });
     document.getElementById('detailFav').addEventListener('click', async (e) => {
       await toggleFav(item);
       e.target.textContent = isFav(item) ? '❤ Na lista' : '♡ Minha Lista';
@@ -769,6 +772,14 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     const poster = info.cover || item.logo || data.logo || '';
     const backdrop = poster;
 
+    // Episódio em andamento desta série → botão "Continuar assistindo" no topo
+    const epUrls = new Set();
+    Object.values(data.seasons).forEach(eps => eps.forEach(ep => ep.url && epUrls.add(ep.url)));
+    const seriesProg = (state.progressList || []).concat(localProgressList()).find(p => epUrls.has(p.url));
+    const continueBtn = seriesProg
+      ? `<button class="btn-continue" id="seriesContinue"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg> Continuar assistindo · ${formatTime(seriesProg.position)}</button>`
+      : '';
+
     content.innerHTML = `
       <div class="detail-backdrop" style="${backdrop ? `background-image:url('${backdrop}')` : ''}">
         <div class="detail-backdrop-fade"></div>
@@ -784,6 +795,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
               <span class="detail-dot">·</span>
               <span>${seasons.length} temporada${seasons.length !== 1 ? 's' : ''} · ${data.total} episódios</span>
             </div>
+            ${continueBtn}
           </div>
         </div>
         ${info.plot ? `<p class="detail-plot">${info.plot}</p>` : ''}
@@ -791,6 +803,11 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       </div>
       <div class="season-bar" id="seasonBar"></div>
       <div class="episode-list" id="episodeList"></div>`;
+
+    if (seriesProg) document.getElementById('seriesContinue').addEventListener('click', () => {
+      closeSeries();
+      openPlayer({ name: seriesProg.name, url: seriesProg.url, group: seriesProg.group || item.group, logo: seriesProg.logo, kind: 'series', id: seriesProg.id }, seriesProg.position);
+    });
 
     const seasonBar = content.querySelector('#seasonBar');
     seasons.forEach((s, i) => {
@@ -888,12 +905,46 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
   }
   function getRecentChannels() { return state.recentChannels; }
 
+  // ===== PROGRESSO — localStorage (instantâneo, sem SQL) + Supabase (entre dispositivos) =====
+  const PROG_KEY = 'tvfun_progress';
+  function localProgressMap() { try { return JSON.parse(localStorage.getItem(PROG_KEY) || '{}'); } catch { return {}; } }
+  function saveLocalProgress(ch, pos, dur) {
+    if (!ch) return;
+    const m = localProgressMap();
+    const cid = String(ch.id || ch.name);
+    m[cid] = { id: cid, name: ch.name || '', logo: ch.logo || '', group: ch.group || '', url: ch.url || '', kind: ch.kind || 'movie', position: Math.floor(pos || 0), duration: Math.floor(dur || 0), updated: Date.now() };
+    try { localStorage.setItem(PROG_KEY, JSON.stringify(m)); } catch {}
+  }
+  const _validProg = (e) => e && e.position > 30 && (!e.duration || e.position < e.duration * 0.95);
+  function localProgress(cid) { const e = localProgressMap()[String(cid)]; return _validProg(e) ? e.position : 0; }
+  function localProgressList() { return Object.values(localProgressMap()).filter(_validProg).sort((a, b) => b.updated - a.updated); }
+  function mergeProgress(local, supa) {
+    const seen = new Set(); const out = [];
+    for (const x of [...(local || []), ...(supa || [])]) { const k = String(x.id); if (k && !seen.has(k)) { seen.add(k); out.push(x); } }
+    return out.slice(0, 12);
+  }
+  // Salva o progresso nos dois lugares
+  function saveProgressBoth(ch, pos, dur) {
+    saveLocalProgress(ch, pos, dur);
+    if (typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress) TVFunDB.saveProgress(ch, pos, dur).catch(() => {});
+  }
+  // Posição salva (local primeiro; senão Supabase). 0 = sem progresso.
+  async function getResumePos(cid) {
+    const lp = localProgress(cid);
+    if (lp) return lp;
+    try {
+      if (typeof TVFunDB !== 'undefined' && TVFunDB.getProgress) {
+        const p = await TVFunDB.getProgress(cid);
+        if (p && p.position_seconds > 30 && (!p.duration_seconds || p.position_seconds < p.duration_seconds * 0.95)) return p.position_seconds;
+      }
+    } catch {}
+    return 0;
+  }
+
   // Pergunta "continuar de onde parou" vs "do início" (VOD com progresso); senão toca do início.
   async function askResume(ch) {
-    let p = null;
-    try { if (typeof TVFunDB !== 'undefined' && TVFunDB.getProgress) p = await TVFunDB.getProgress(ch.id || ch.name); } catch {}
-    const pos = p && p.position_seconds;
-    if (pos && pos > 30 && (!p.duration_seconds || pos < p.duration_seconds * 0.95)) showResumeDialog(ch, pos);
+    const pos = await getResumePos(ch.id || ch.name);
+    if (pos > 0) showResumeDialog(ch, pos);
     else openPlayer(ch, 0);
   }
 
@@ -1027,8 +1078,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
   function closePlayer() {
     const videoEl = document.getElementById('videoEl');
     // salva a posição final (continuar assistindo entre dispositivos)
-    if (state.currentIsVOD && state.currentChannel && typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress && videoEl.currentTime > 30) {
-      TVFunDB.saveProgress(state.currentChannel, videoEl.currentTime, videoEl.duration).catch(() => {});
+    if (state.currentIsVOD && state.currentChannel && videoEl.currentTime > 30) {
+      saveProgressBoth(state.currentChannel, videoEl.currentTime, videoEl.duration);
     }
     videoEl.pause(); videoEl.src = '';
     state.playerInst = destroyPlayer(state.playerInst);
@@ -1038,7 +1089,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     document.getElementById('playerModal').classList.remove('open');
     document.body.style.overflow = '';
     state.currentChannel = null;
-    renderRows(); // refresh recents
+    state.progressList = mergeProgress(localProgressList(), state.progressList); // atualiza "Continuar assistindo"
+    renderRows(); // refresh recents + continuar
   }
 
   function updateFavBtn() {
@@ -1086,7 +1138,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
         if (video.currentTime - (state._lastSave || 0) > 10) {
           state._lastSave = video.currentTime;
           const ch = state.currentChannel;
-          if (ch && typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress) TVFunDB.saveProgress(ch, video.currentTime, video.duration).catch(() => {});
+          if (ch) saveProgressBoth(ch, video.currentTime, video.duration);
         }
       }
     });
@@ -1603,12 +1655,13 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       state.favIds = favIds;
       state.recentChannels = history;
       state.savedLists = lists;
-      state.progressList = progress || [];
+      state.progressList = mergeProgress(localProgressList(), progress || []);
     } else {
       // Fallback localStorage
       state.favIds = store.favorites();
       state.recentChannels = store.recents();
       state.savedLists = store.lists();
+      state.progressList = localProgressList();
     }
 
     setupAuthNav();   // async (não bloqueia render)
