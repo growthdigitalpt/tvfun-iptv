@@ -254,6 +254,9 @@
         <source id="videoSrc" src="" type="video/mp4">
       </video>
       <div class="player-loading" id="playerLoading"><div class="spinner"></div></div>
+      <button class="player-center-btn" id="playerCenterBtn" aria-label="Pausar/Continuar">
+        <svg id="iconCenter" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </button>
       <div class="player-controls" id="playerControls">
         <div class="p-progress" id="pProgress">
           <div class="p-track">
@@ -286,7 +289,6 @@
               <input type="range" class="vol-range" id="volRange" min="0" max="1" step="0.05" value="1">
             </div>
             <div class="live-tag"><div class="live-dot"></div>AO VIVO</div>
-            <span class="p-title" id="pTitle"></span>
           </div>
           <div class="p-right">
             <button class="p-btn fav-btn" id="btnFavPlayer" title="Favoritar canal">

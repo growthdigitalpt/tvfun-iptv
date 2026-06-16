@@ -167,7 +167,7 @@ async function handleList(req, res, urlObj) {
         const g = s.group || 'Outros';
         const c = perGroupCount.get(g) || 0;
         if (c < perGroup && out.length < limit) {
-          const capa = covers.series.get(normalizeName(s.series)) || s.logo;
+          const capa = covers.series.get(normalizeName(s.series)) || '';   // sem match na API → vazio (cliente busca fallback/TMDB ou mostra inicial)
           out.push({ name: s.series, series: s.series, group: g, logo: capa, kind: 'series', episodeCount: s.episodes.length });
           perGroupCount.set(g, c + 1);
         }
@@ -389,6 +389,29 @@ async function getApiCovers(listUrl) {
   return got;
 }
 
+// ─── /api/cover?type=movie|series&title= — fonte alternativa de capa (TMDB) ──
+// Ativado por env TMDB_API_KEY (chave gratuita). Sem a chave, responde 404 (cliente mostra a inicial).
+const TMDB_KEY = process.env.TMDB_API_KEY || '';
+const tmdbCache = new Map();
+async function handleCover(req, res, urlObj) {
+  const title = (urlObj.searchParams.get('title') || '').trim();
+  const tmdbType = urlObj.searchParams.get('type') === 'series' ? 'tv' : 'movie';
+  const fail = () => { res.writeHead(404, { 'Access-Control-Allow-Origin': '*' }); res.end(); };
+  const send = (u) => { res.writeHead(302, { Location: u, 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=604800' }); res.end(); };
+  if (!TMDB_KEY || !title) return fail();
+  const ck = tmdbType + ':' + title.toLowerCase();
+  if (tmdbCache.has(ck)) { const u = tmdbCache.get(ck); return u ? send(u) : fail(); }
+  try {
+    const q = encodeURIComponent(title.replace(/\s*[\(\[]\d{4}[\)\]].*$/, '').trim());
+    const r = await fetchWithTimeout(`https://api.themoviedb.org/3/search/${tmdbType}?api_key=${TMDB_KEY}&language=pt-BR&query=${q}`, 8000);
+    const j = await r.json();
+    const path = j && j.results && j.results[0] && j.results[0].poster_path;
+    const url = path ? `https://image.tmdb.org/t/p/w342${path}` : '';
+    tmdbCache.set(ck, url);
+    return url ? send(url) : fail();
+  } catch { fail(); }
+}
+
 // ─── Provisionamento via agente browser-use (Gradio) ─────────
 // SEGREDOS via variável de ambiente — NUNCA hardcode:
 //   AGENT_BASE_URL, OPENAI_API_KEY, PANEL_USER, PANEL_PASS, PANEL_HOST
@@ -569,6 +592,7 @@ const server = http.createServer((req, res) => {
   if (p === '/api/list') return handleList(req, res, urlObj);
   if (p === '/api/episodes') return handleEpisodes(req, res, urlObj);
   if (p === '/api/info') return handleInfo(req, res, urlObj);
+  if (p === '/api/cover') return handleCover(req, res, urlObj);
   if (p === '/api/provision') return handleProvision(req, res);
   if (p === '/api/renew') return handleRenew(req, res);
   if (p === '/api/stream') return handleStream(req, res, urlObj);

@@ -587,6 +587,16 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     return row;
   }
 
+  // Fallback de capa: se a imagem falhar, tenta a fonte alternativa (/api/cover → TMDB); senão mostra a inicial.
+  window.__coverFb = function (img) {
+    const showIni = () => { img.style.display = 'none'; const e = img.parentElement && img.parentElement.querySelector('.card-initial'); if (e) e.style.display = 'flex'; };
+    if (img.dataset.fb) return showIni();          // já tentou o fallback → inicial
+    const k = img.dataset.kind, n = img.dataset.name;
+    if (!k || !n) return showIni();
+    img.dataset.fb = '1';
+    img.src = '/api/cover?type=' + k + '&title=' + encodeURIComponent(n);
+  };
+
   function buildCard(ch) {
     const fav = isFav(ch);
     const kind = ch.kind || 'live';
@@ -616,13 +626,17 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'
       : '<svg viewBox="0 0 24 24" fill="#111"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
 
+    const cname = (dispName || ch.name || '').replace(/"/g, '&quot;');
+    const fbData = isLive ? '' : ` data-kind="${kind}" data-name="${cname}"`;
+    const posterImg = ch.logo
+      ? `<img class="${imgClass}" src="${ch.logo}" alt="${cname}" loading="lazy"${fbData} onerror="window.__coverFb(this)">`
+      : (isLive ? '' : `<img class="${imgClass}" src="/api/cover?type=${kind}&title=${encodeURIComponent(dispName || ch.name || '')}" alt="${cname}" loading="lazy" data-fb="1" onerror="window.__coverFb(this)">`);
+    const initialStyle = (ch.logo || !isLive) ? 'display:none' : '';
     card.innerHTML = `
       <div class="card-img" style="background:${bgColor}">
         ${isLive && ch.logo ? `<div class="card-bg-blur" style="background-image:url('${logoSafe}')"></div><div class="card-bg-shade"></div>` : ''}
-        ${ch.logo
-          ? `<img class="${imgClass}" src="${ch.logo}" alt="${ch.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-          : ''}
-        <div class="card-initial" style="${ch.logo ? 'display:none' : ''}">${initial}</div>
+        ${posterImg}
+        <div class="card-initial" style="${initialStyle}">${initial}</div>
         ${badge}
         <div class="poster-hover">
           <button class="poster-play">${playIcon}</button>
@@ -869,9 +883,10 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     document.getElementById('playerChName').textContent = ch.name;
     document.getElementById('playerChGroup').textContent = ch.group || '';
-    document.getElementById('pTitle').textContent = ch.name;
 
     // Live (AO VIVO) vs VOD (filme/série com barra de progresso)
+    const wrap = document.getElementById('playerWrap');
+    wrap.classList.toggle('live', !isVOD);   // live: esconde play/seek; VOD: controles completos
     const topBar = document.getElementById('playerTopBar');
     const liveTag = document.querySelector('.live-tag');
     topBar.classList.toggle('vod', isVOD);
@@ -978,13 +993,17 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
   }
 
   function resetHideCtrl() {
-    const ctrl = document.getElementById('playerControls');
-    ctrl.style.opacity = '1';
+    const wrap = document.getElementById('playerWrap');
+    if (!wrap) return;
+    wrap.classList.add('ctrl-on');
     clearTimeout(state.hideCtrlTimer);
     state.hideCtrlTimer = setTimeout(() => {
-      const v = document.getElementById('videoEl');
-      if (!v.paused) ctrl.style.opacity = '0';
+      if (!document.getElementById('videoEl').paused) wrap.classList.remove('ctrl-on');  // some sozinho só se estiver tocando
     }, 3500);
+  }
+  function hideControls() {
+    document.getElementById('playerWrap').classList.remove('ctrl-on');
+    clearTimeout(state.hideCtrlTimer);
   }
 
   function setupPlayerControls() {
@@ -1038,8 +1057,30 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     });
     track.addEventListener('mouseleave', () => { if (seekTip) seekTip.style.opacity = '0'; });
 
-    btnPlay.addEventListener('click', () => video.paused ? video.play() : video.pause());
-    video.addEventListener('click', () => video.paused ? video.play() : video.pause());
+    const wrap = document.getElementById('playerWrap');
+    const centerBtn = document.getElementById('playerCenterBtn');
+    const iconCenter = document.getElementById('iconCenter');
+    const togglePlay = () => { video.paused ? video.play() : video.pause(); };
+    const syncCenterIcon = () => {
+      iconCenter.innerHTML = video.paused
+        ? '<polygon points="5 3 19 12 5 21 5 3"/>'
+        : '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    };
+    video.addEventListener('play', syncCenterIcon);
+    video.addEventListener('pause', syncCenterIcon);
+
+    btnPlay.addEventListener('click', togglePlay);
+    centerBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePlay(); resetHideCtrl(); });
+
+    // Toque/clique na área do vídeo
+    video.addEventListener('click', () => {
+      if (matchMedia('(pointer: coarse)').matches) {
+        // celular: 1º toque só mostra os controles; tocar de novo esconde (não pausa)
+        wrap.classList.contains('ctrl-on') ? hideControls() : resetHideCtrl();
+      } else if (state.currentIsVOD) {
+        togglePlay(); resetHideCtrl();   // desktop: clicar no vídeo pausa/continua
+      }
+    });
 
     document.getElementById('btnRew').addEventListener('click', () => { video.currentTime = Math.max(0, video.currentTime - 10); });
     document.getElementById('btnFwd').addEventListener('click', () => { video.currentTime += 10; });
@@ -1530,9 +1571,13 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       state.channels = saved;
       buildCategoryPills();
       renderAll();
-    } else {
-      showEmpty();
+      return;
     }
+    // Lista salva (importada antes) com URL → carrega sozinha, sem pedir import de novo
+    const savedLists = state.savedLists || store.lists();
+    const lastUrl = savedLists && savedLists[0] && /^https?:\/\//i.test(savedLists[0].src || '') ? savedLists[0].src : null;
+    if (lastUrl) { showEmpty(); loadM3UFromUrl(lastUrl); return; }
+    showEmpty();
   }
 
   document.addEventListener('DOMContentLoaded', () => { init().catch(console.error); });

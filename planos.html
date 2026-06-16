@@ -152,11 +152,6 @@
           <div class="pay-method-label">Cartão</div>
           <div class="pay-method-sub">Crédito ou débito</div>
         </button>
-        <button class="pay-method-btn" id="meth-boleto" onclick="selectMethod('boleto')">
-          <div class="pay-method-icon">📄</div>
-          <div class="pay-method-label">Boleto</div>
-          <div class="pay-method-sub">Vence em 3 dias</div>
-        </button>
       </div>
 
       <!-- PIX -->
@@ -514,7 +509,7 @@
     // ===== METHOD SELECT =====
     window.selectMethod = function(m) {
       selMeth = m;
-      ['pix','card','boleto'].forEach(k => {
+      ['pix','card'].forEach(k => {
         document.getElementById('meth-' + k).classList.toggle('selected', k === m);
         document.getElementById('pay-' + k).classList.toggle('active', k === m);
       });

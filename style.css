@@ -703,6 +703,32 @@ input { font-family: inherit; }
   opacity: 0; transition: opacity .3s;
 }
 .player-wrap:hover .player-controls { opacity: 1; }
+
+/* ===== Botão central play/pause + visibilidade dos controles por toque ===== */
+.player-top-bar { opacity: 0; transition: opacity .3s; }   /* topo aparece/some junto com os controles */
+.player-wrap:hover .player-top-bar,
+.player-wrap.ctrl-on .player-top-bar,
+.player-wrap.ctrl-on .player-controls { opacity: 1; }
+
+.player-center-btn {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 76px; height: 76px; border-radius: 50%;
+  background: rgba(0,0,0,.5); border: none; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 6; opacity: 0; pointer-events: none;
+  transition: opacity .25s, transform .1s;
+}
+.player-center-btn svg { width: 34px; height: 34px; }
+.player-center-btn:active { transform: translate(-50%, -50%) scale(.92); }
+.player-wrap:hover .player-center-btn,
+.player-wrap.ctrl-on .player-center-btn { opacity: 1; pointer-events: auto; }
+
+/* Canais ao vivo: sem play/avançar/retroceder, barra de progresso nem botão central (não dá pra pausar/seek live) */
+.player-wrap.live #btnPlay,
+.player-wrap.live #btnRew,
+.player-wrap.live #btnFwd,
+.player-wrap.live .p-progress,
+.player-wrap.live .player-center-btn { display: none; }
 .p-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer; }
 .p-track {
   flex: 1; height: 4px; background: rgba(255,255,255,.2); border-radius: 2px;
@@ -915,7 +941,7 @@ input { font-family: inherit; }
     border-radius: 0; display: flex; flex-direction: column; justify-content: center;
   }
   .video-el { width: 100vw; min-height: 0; max-height: 80vh; }
-  .player-controls { opacity: 1; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); }
+  .player-controls { padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); }
   .player-top-bar { padding: calc(12px + env(safe-area-inset-top)) 14px 12px; }
   .player-ch-name { font-size: 13px; }
   .player-ch-group { display: none; }
@@ -943,7 +969,6 @@ input { font-family: inherit; }
 @media (pointer: coarse) {
   .card:hover, .card.poster:hover { transform: none; }
   .row:hover .row-more { opacity: 1; }
-  .player-controls { opacity: 1; }   /* sem hover no toque → controles fixos */
 }
 
 /* =====================================================================
