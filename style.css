@@ -1042,3 +1042,15 @@ html.tv .hero-content { left: 4vw; bottom: 22%; }
 html.tv .player-controls { padding: 22px 28px 30px; }   /* controles maiores na TV */
 /* foco mais forte e card maior na TV */
 html.tv .card:focus-visible, html.tv .chl-row:focus-visible { outline-width: 4px; transform: scale(1.1); }
+
+/* =====================================================================
+   Diálogo "continuar de onde parou"
+   ===================================================================== */
+.resume-bg { position: fixed; inset: 0; z-index: 1100; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.resume-box { background: var(--bg2); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 24px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.7); }
+.resume-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; line-height: 1.25; }
+.resume-sub { font-size: 13px; color: var(--gray2); margin-bottom: 20px; }
+.resume-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: #fff; margin-top: 10px; transition: filter .15s, background .15s; }
+.resume-btn:hover { background: rgba(255,255,255,.1); }
+.resume-btn.primary { background: var(--red); border-color: var(--red); }
+.resume-btn.primary:hover { filter: brightness(1.1); }

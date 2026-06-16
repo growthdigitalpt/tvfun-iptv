@@ -659,8 +659,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     // Clique: filme → página de detalhes; série → detalhes/episódios; canal → player
     const open = (e) => {
       e.stopPropagation();
-      if (ch._resume) return openPlayer(ch);                          // continuar assistindo → resume direto
-      if (isSeries) return ch.url ? openPlayer(ch) : openSeries(ch);  // episódio (tem URL) toca; série (sem URL) abre lista
+      if (ch._resume) return openPlayer(ch, ch.position || 0);        // continuar assistindo → resume direto
+      if (isSeries) return ch.url ? askResume(ch) : openSeries(ch);   // episódio (tem URL) → pergunta; série (sem URL) abre lista
       return kind === 'movie' ? openMovieDetail(ch) : openPlayer(ch);
     };
     card.querySelector('.card-img').addEventListener('click', open);
@@ -731,7 +731,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     document.getElementById('detailPlay').addEventListener('click', () => {
       closeSeries();
-      openPlayer({ name: info.name || item.name, url: item.url, group: item.group, logo: poster, kind: 'movie', id: item.url });
+      askResume({ name: info.name || item.name, url: item.url, group: item.group, logo: poster, kind: 'movie', id: item.url });
     });
     document.getElementById('detailFav').addEventListener('click', async (e) => {
       await toggleFav(item);
@@ -823,7 +823,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
         <div class="episode-play"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>`;
       row.addEventListener('click', () => {
         closeSeries();
-        openPlayer({ name: ep.name, url: ep.url, group: data.group, logo: ep.logo || data.logo, kind: 'series', id: ep.url });
+        askResume({ name: ep.name, url: ep.url, group: data.group, logo: ep.logo || data.logo, kind: 'series', id: ep.url });
       });
       list.appendChild(row);
     });
@@ -888,8 +888,37 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
   }
   function getRecentChannels() { return state.recentChannels; }
 
+  // Pergunta "continuar de onde parou" vs "do início" (VOD com progresso); senão toca do início.
+  async function askResume(ch) {
+    let p = null;
+    try { if (typeof TVFunDB !== 'undefined' && TVFunDB.getProgress) p = await TVFunDB.getProgress(ch.id || ch.name); } catch {}
+    const pos = p && p.position_seconds;
+    if (pos && pos > 30 && (!p.duration_seconds || pos < p.duration_seconds * 0.95)) showResumeDialog(ch, pos);
+    else openPlayer(ch, 0);
+  }
+
+  function showResumeDialog(ch, pos) {
+    const old = document.getElementById('resumeDialog'); if (old) old.remove();
+    const d = document.createElement('div');
+    d.id = 'resumeDialog';
+    d.className = 'resume-bg';
+    d.innerHTML =
+      '<div class="resume-box">' +
+        '<div class="resume-title">' + (ch.name || 'Continuar assistindo?') + '</div>' +
+        '<div class="resume-sub">Você parou em ' + formatTime(pos) + '.</div>' +
+        '<button class="resume-btn primary" id="rdGo">▶ Continuar de ' + formatTime(pos) + '</button>' +
+        '<button class="resume-btn" id="rdStart">↺ Assistir do início</button>' +
+      '</div>';
+    document.body.appendChild(d);
+    const close = () => d.remove();
+    d.addEventListener('click', e => { if (e.target === d) close(); });
+    document.getElementById('rdGo').onclick = () => { close(); openPlayer(ch, pos); };
+    document.getElementById('rdStart').onclick = () => { close(); openPlayer(ch, 0); };
+  }
+
   // ===== PLAYER =====
-  function openPlayer(ch) {
+  // resumeAt: segundos onde começar (0 = do início). A escolha "continuar/do início" vem de askResume().
+  function openPlayer(ch, resumeAt = 0) {
     state.currentChannel = ch;
     addRecent(ch);
 
@@ -919,15 +948,11 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     state._lastSave = 0;
     startPlayback(ch, isVOD);
 
-    // Continuar de onde parou (VOD, sincronizado entre dispositivos)
-    if (isVOD && typeof TVFunDB !== 'undefined' && TVFunDB.getProgress) {
-      TVFunDB.getProgress(ch.id || ch.name).then(p => {
-        if (!p || !p.position_seconds || p.position_seconds < 30) return;
-        if (p.duration_seconds && p.position_seconds > p.duration_seconds * 0.95) return; // quase no fim → recomeça
-        const v = document.getElementById('videoEl');
-        const seek = () => { if (v.duration && p.position_seconds < v.duration - 5) { v.currentTime = p.position_seconds; showToast('▶ Continuando de ' + formatTime(p.position_seconds)); } };
-        v.readyState >= 1 && v.duration ? seek() : v.addEventListener('loadedmetadata', seek, { once: true });
-      }).catch(() => {});
+    // Retoma na posição escolhida (resumeAt > 0); senão começa do início.
+    if (isVOD && resumeAt > 0) {
+      const v = document.getElementById('videoEl');
+      const seek = () => { if (v.duration && resumeAt < v.duration - 5) v.currentTime = resumeAt; };
+      v.readyState >= 1 && v.duration ? seek() : v.addEventListener('loadedmetadata', seek, { once: true });
     }
 
     updateFavBtn();
