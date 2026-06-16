@@ -397,25 +397,22 @@ async function _buildApiCovers(listUrl) {
   return got;
 }
 
-// ─── /api/cover?type=movie|series&title= — fonte alternativa de capa (TMDB) ──
-// Ativado por env TMDB_API_KEY (chave gratuita). Sem a chave, responde 404 (cliente mostra a inicial).
-const TMDB_KEY = process.env.TMDB_API_KEY || '';
-const tmdbCache = new Map();
+// ─── /api/cover?type=series&title= — fonte alternativa de capa (TVmaze) ──
+// TVmaze é livre p/ uso comercial (CC BY-SA, sem chave). Só séries; filmes vêm do provedor.
+const coverFbCache = new Map();
 async function handleCover(req, res, urlObj) {
   const title = (urlObj.searchParams.get('title') || '').trim();
-  const tmdbType = urlObj.searchParams.get('type') === 'series' ? 'tv' : 'movie';
+  const isSeries = urlObj.searchParams.get('type') === 'series';
   const fail = () => { res.writeHead(404, { 'Access-Control-Allow-Origin': '*' }); res.end(); };
   const send = (u) => { res.writeHead(302, { Location: u, 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=604800' }); res.end(); };
-  if (!TMDB_KEY || !title) return fail();
-  const ck = tmdbType + ':' + title.toLowerCase();
-  if (tmdbCache.has(ck)) { const u = tmdbCache.get(ck); return u ? send(u) : fail(); }
+  if (!title || !isSeries) return fail();   // fonte alternativa só para séries (filmes = provedor)
+  const ck = title.toLowerCase();
+  if (coverFbCache.has(ck)) { const u = coverFbCache.get(ck); return u ? send(u) : fail(); }
   try {
     const q = encodeURIComponent(title.replace(/\s*[\(\[]\d{4}[\)\]].*$/, '').trim());
-    const r = await fetchWithTimeout(`https://api.themoviedb.org/3/search/${tmdbType}?api_key=${TMDB_KEY}&language=pt-BR&query=${q}`, 8000);
-    const j = await r.json();
-    const path = j && j.results && j.results[0] && j.results[0].poster_path;
-    const url = path ? `https://image.tmdb.org/t/p/w342${path}` : '';
-    tmdbCache.set(ck, url);
+    const r = await fetchWithTimeout(`https://api.tvmaze.com/singlesearch/shows?q=${q}`, 8000);
+    const url = r.ok ? ((await r.json())?.image?.original || '') : '';
+    coverFbCache.set(ck, url);
     return url ? send(url) : fail();
   } catch { fail(); }
 }
