@@ -657,7 +657,12 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       <div class="poster-name">${dispName}</div>`;
 
     // Clique: filme → página de detalhes; série → detalhes/episódios; canal → player
-    const open = (e) => { e.stopPropagation(); if (ch._resume) return openPlayer(ch); isSeries ? openSeries(ch) : (kind === 'movie' ? openMovieDetail(ch) : openPlayer(ch)); };
+    const open = (e) => {
+      e.stopPropagation();
+      if (ch._resume) return openPlayer(ch);                          // continuar assistindo → resume direto
+      if (isSeries) return ch.url ? openPlayer(ch) : openSeries(ch);  // episódio (tem URL) toca; série (sem URL) abre lista
+      return kind === 'movie' ? openMovieDetail(ch) : openPlayer(ch);
+    };
     card.querySelector('.card-img').addEventListener('click', open);
     card.querySelector('.poster-play').addEventListener('click', open);
 
@@ -890,7 +895,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     const modal = document.getElementById('playerModal');
     const videoEl = document.getElementById('videoEl');
-    const isVOD = (ch.kind === 'movie' || ch.kind === 'series');
+    const isVOD = (ch.kind === 'movie' || ch.kind === 'series') || /\/(movie|series)\//i.test(ch.url || '');
 
     document.getElementById('playerChName').textContent = ch.name;
     document.getElementById('playerChGroup').textContent = ch.group || '';
