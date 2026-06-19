@@ -365,6 +365,107 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     _trialTimer = setInterval(tick, 1000);
   }
 
+  // ===== AVISO DE VENCIMENTO (≤5 dias) — só informativo, sem botão =====
+  async function setupExpiryNotice() {
+    if (typeof TVFunDB === 'undefined') return;
+    const today = new Date().toISOString().slice(0, 10);
+    // já fechado hoje? não repete no mesmo dia
+    if (localStorage.getItem('tvfun_exp_dismiss') === today) return;
+    let sub = null, cred = null;
+    try {
+      [sub, cred] = await Promise.all([
+        TVFunDB.getActiveSubscription().catch(() => null),
+        TVFunDB.getActiveCredentials().catch(() => null),
+      ]);
+    } catch {}
+    // menor (mais próxima) data de expiração entre assinatura e credencial IPTV
+    const dates = [sub && sub.expires_at, cred && cred.expires_at]
+      .map(d => (d ? new Date(d).getTime() : NaN))
+      .filter(ms => !isNaN(ms));
+    if (!dates.length) return;
+    const expMs = Math.min(...dates);
+    const daysLeft = Math.ceil((expMs - Date.now()) / 86_400_000);
+    if (daysLeft < 0 || daysLeft > 5) return; // só quando está perto (0–5 dias)
+    renderExpiryNotice(daysLeft, expMs);
+  }
+
+  function renderExpiryNotice(daysLeft, expMs) {
+    if (document.getElementById('expNotice')) return;
+    const dateStr = new Date(expMs).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const quando = daysLeft <= 0 ? 'hoje' : daysLeft === 1 ? 'amanhã' : `em ${daysLeft} dias`;
+    const el = document.createElement('div');
+    el.id = 'expNotice';
+    el.className = 'exp-notice' + (daysLeft <= 1 ? ' urgent' : '');
+    el.innerHTML =
+      '<span class="exp-ic">⏳</span>' +
+      `<span class="exp-txt">Seu plano vence ${quando} · <b>${dateStr}</b></span>` +
+      '<button class="exp-x" aria-label="Fechar aviso">×</button>';
+    document.body.appendChild(el);
+    el.querySelector('.exp-x').addEventListener('click', () => {
+      el.remove();
+      try { localStorage.setItem('tvfun_exp_dismiss', new Date().toISOString().slice(0, 10)); } catch {}
+    });
+  }
+
+  // ===== MODO TV — navegação por controle remoto (D-pad / setas) =====
+  // Move o foco para o elemento focável mais próximo na direção apertada; Enter ativa.
+  // Só age quando o player está fechado (com o player aberto, as setas controlam o vídeo).
+  function setupTvNavigation() {
+    const SEL = '.card, .chl-cat, .kind-tab, a[href], button:not([disabled]), [tabindex]';
+    const ensureFocusable = (el) => {
+      if (!el) return;
+      const native = /^(a|button|input|select|textarea)$/i.test(el.tagName) || el.hasAttribute('tabindex');
+      if (!native) el.tabIndex = 0;
+    };
+    const visible = () => Array.from(document.querySelectorAll(SEL)).filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.width > 4 && r.height > 4 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+    });
+    const cen = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    const move = (dir) => {
+      document.body.classList.add('tv-nav');
+      const all = visible();
+      if (!all.length) return;
+      const cur = document.activeElement;
+      if (!cur || cur === document.body || !all.includes(cur)) {
+        ensureFocusable(all[0]); all[0].focus(); all[0].scrollIntoView({ block: 'center' }); return;
+      }
+      const cc = cen(cur.getBoundingClientRect());
+      let best = null, score = Infinity;
+      for (const el of all) {
+        if (el === cur) continue;
+        const c = cen(el.getBoundingClientRect());
+        const dx = c.x - cc.x, dy = c.y - cc.y;
+        let ok, primary, secondary;
+        if (dir === 'right') { ok = dx > 6; primary = dx; secondary = Math.abs(dy); }
+        else if (dir === 'left') { ok = dx < -6; primary = -dx; secondary = Math.abs(dy); }
+        else if (dir === 'down') { ok = dy > 6; primary = dy; secondary = Math.abs(dx); }
+        else { ok = dy < -6; primary = -dy; secondary = Math.abs(dx); }
+        if (!ok) continue;
+        const s = primary + secondary * 2.2; // prioriza alinhamento + proximidade
+        if (s < score) { score = s; best = el; }
+      }
+      if (best) { ensureFocusable(best); best.focus(); best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+    };
+    document.addEventListener('keydown', (e) => {
+      const t = e.target;
+      const tag = (t.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || t.isContentEditable) return; // não atrapalhar digitação
+      if (document.getElementById('playerModal')?.classList.contains('open')) return; // player usa as setas
+      switch (e.key) {
+        case 'ArrowRight': move('right'); e.preventDefault(); break;
+        case 'ArrowLeft':  move('left');  e.preventDefault(); break;
+        case 'ArrowDown':  move('down');  e.preventDefault(); break;
+        case 'ArrowUp':    move('up');    e.preventDefault(); break;
+        case 'Enter':
+          if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.click(); e.preventDefault();
+          }
+          break;
+      }
+    });
+  }
+
   function showChannels() {
     document.getElementById('heroEmpty').classList.add('hidden');
     document.getElementById('heroChannel').classList.remove('hidden');
@@ -1568,7 +1669,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
         if (importOpen) { document.getElementById('importModal').classList.remove('open'); document.body.style.overflow = ''; }
       }
       if (!playerOpen) return;
-      if (e.key === ' ') { e.preventDefault(); const v = document.getElementById('videoEl'); v.paused ? v.play() : v.pause(); }
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); const v = document.getElementById('videoEl'); v.paused ? v.play() : v.pause(); }
       if (e.key === 'ArrowLeft') document.getElementById('videoEl').currentTime -= 10;
       if (e.key === 'ArrowRight') document.getElementById('videoEl').currentTime += 10;
       if (e.key === 'ArrowUp') { const v = document.getElementById('videoEl'); v.volume = Math.min(1, v.volume + 0.1); }
@@ -1675,6 +1776,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     setupTrial();
     populateAmbWall();
     setupTrialCountdown();
+    setupExpiryNotice();   // aviso de vencimento (≤5 dias) — só informativo
+    setupTvNavigation();   // navegação por controle remoto (TV/box/Firestick)
 
     document.getElementById('btnLoadDemo')?.addEventListener('click', loadDemo);
 
