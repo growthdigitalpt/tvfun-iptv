@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baixar o TV Fun — apps para celular, TV, PC e Firestick</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta name="theme-color" content="#e50914">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: radial-gradient(1200px 600px at 50% -10%, #1c1c24 0%, #0d0d11 55%) fixed, #0d0d11;
+      color: #e9e9ee; min-height: 100vh; line-height: 1.5;
+    }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 36px 20px 70px; }
+    header { text-align: center; margin-bottom: 38px; }
+    header img { height: 54px; margin-bottom: 14px; }
+    header h1 { font-size: clamp(26px, 5vw, 40px); font-weight: 900; letter-spacing: -.02em; }
+    header h1 b { color: #e50914; }
+    header p { color: #a7a7b3; margin-top: 8px; font-size: 15.5px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+    .card {
+      background: #16161c; border: 1px solid rgba(255,255,255,.08); border-radius: 18px;
+      padding: 24px 22px; display: flex; flex-direction: column;
+      transition: border-color .2s, transform .2s;
+    }
+    .card.hl { border-color: #e50914; box-shadow: 0 0 0 3px rgba(229,9,20,.18); transform: translateY(-2px); }
+    .card .ic { font-size: 38px; line-height: 1; margin-bottom: 12px; }
+    .card h2 { font-size: 19px; font-weight: 800; margin-bottom: 6px; }
+    .card .tag { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; color: #9aa0ff; background: rgba(120,130,255,.12);
+      padding: 3px 8px; border-radius: 999px; margin-bottom: 12px; width: fit-content; }
+    .card p, .card li { color: #b9b9c4; font-size: 14px; }
+    .card ol { margin: 6px 0 4px 18px; display: flex; flex-direction: column; gap: 5px; }
+    .card b { color: #fff; }
+    .spacer { flex: 1; min-height: 14px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: #e50914; color: #fff; text-decoration: none; font-weight: 800; font-size: 15px;
+      padding: 12px 18px; border-radius: 12px; border: 0; cursor: pointer;
+      transition: filter .15s; width: 100%; text-align: center;
+    }
+    .btn:hover { filter: brightness(1.12); }
+    .btn.ghost { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #fff; }
+    .url {
+      background: #0c0c10; border: 1px dashed rgba(255,255,255,.18); border-radius: 10px;
+      padding: 11px 12px; font-family: ui-monospace, monospace; font-size: 13px; color: #ffd27a;
+      word-break: break-all; margin: 8px 0 10px; user-select: all;
+    }
+    .small { font-size: 12.5px; color: #8a8a96; margin-top: 10px; }
+    .note { text-align: center; color: #8a8a96; font-size: 13px; margin-top: 30px; }
+    .toast {
+      position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
+      background: #1db954; color: #062; font-weight: 800; padding: 11px 18px; border-radius: 12px;
+      opacity: 0; pointer-events: none; transition: .25s; font-size: 14px;
+    }
+    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    footer { text-align: center; color: #6a6a74; font-size: 12px; margin-top: 44px; }
+    footer a { color: #9a9aa5; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="logo.png" alt="TV Fun" onerror="this.style.display='none'">
+      <h1>Baixe o <b>TV Fun</b></h1>
+      <p>Funciona no celular, na TV, no computador e no Firestick.</p>
+    </header>
+
+    <main class="grid">
+      <!-- Android -->
+      <section class="card" id="card-android">
+        <div class="ic">🤖</div>
+        <span class="tag">Android · celular/tablet</span>
+        <h2>Celular Android</h2>
+        <p>Baixe o app e instale. Se aparecer um aviso, toque em <b>permitir / instalar mesmo assim</b> (fontes desconhecidas).</p>
+        <div class="spacer"></div>
+        <a class="btn" href="tvfun.apk" download>⬇&nbsp; Baixar o app (APK)</a>
+      </section>
+
+      <!-- TV / Firestick -->
+      <section class="card" id="card-tv">
+        <div class="ic">📺</div>
+        <span class="tag">Android TV · TV Box · Firestick</span>
+        <h2>TV e Firestick</h2>
+        <ol>
+          <li>Instale o app <b>Downloader</b> na TV.</li>
+          <li>Abra o Downloader e digite este endereço:</li>
+        </ol>
+        <div class="url" id="apkurl">projeto01-tvfun.grgyfj.easypanel.host/tvfun.apk</div>
+        <button class="btn ghost" onclick="copyUrl()">📋&nbsp; Copiar endereço</button>
+        <p class="small">Ative <b>“Apps de fontes desconhecidas”</b> nas configurações da TV (em alguns aparelhos, dentro de “Minha Fire TV → Opções de desenvolvedor”).</p>
+      </section>
+
+      <!-- iPhone -->
+      <section class="card" id="card-ios">
+        <div class="ic">🍎</div>
+        <span class="tag">iPhone · iPad</span>
+        <h2>iPhone / iPad</h2>
+        <ol>
+          <li>Abra o site no <b>Safari</b>.</li>
+          <li>Toque em <b>Compartilhar</b> (quadrado com seta ↑).</li>
+          <li>Escolha <b>Adicionar à Tela de Início</b>.</li>
+        </ol>
+        <div class="spacer"></div>
+        <a class="btn" href="index.html">Abrir o app no Safari</a>
+      </section>
+
+      <!-- PC -->
+      <section class="card" id="card-pc">
+        <div class="ic">💻</div>
+        <span class="tag">Windows · Mac</span>
+        <h2>Computador</h2>
+        <ol>
+          <li>Abra o app no <b>Chrome</b> ou <b>Edge</b>.</li>
+          <li>Clique no ícone <b>Instalar</b> (⊕ / monitor) na barra de endereço.</li>
+          <li>Pronto — abre como um app normal.</li>
+        </ol>
+        <div class="spacer"></div>
+        <a class="btn" href="index.html">Abrir o app</a>
+      </section>
+    </main>
+
+    <p class="note">Já tem conta? Abra o app e faça login normalmente. Qualquer dúvida, fale com o suporte.</p>
+    <footer>© 2026 TV Fun · <a href="index.html">Início</a></footer>
+  </div>
+
+  <div class="toast" id="toast">✓ Endereço copiado!</div>
+
+  <script>
+    function copyUrl() {
+      var txt = document.getElementById('apkurl').textContent.trim();
+      var done = function () { var t = document.getElementById('toast'); t.classList.add('on'); setTimeout(function(){ t.classList.remove('on'); }, 1800); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done).catch(done);
+      } else {
+        var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
+        ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove(); done();
+      }
+    }
+    // destaca o cartão do aparelho atual
+    (function () {
+      var ua = navigator.userAgent, id = null;
+      if (/Android/i.test(ua)) id = /TV|BRAVIA|AFT|SmartTV|BasicTV/i.test(ua) ? 'card-tv' : 'card-android';
+      else if (/iPhone|iPad|iPod/i.test(ua)) id = 'card-ios';
+      else if (/Windows|Macintosh|Mac OS|Linux/i.test(ua)) id = 'card-pc';
+      if (id) { var el = document.getElementById(id); if (el) el.classList.add('hl'); }
+    })();
+  </script>
+</body>
+</html>
