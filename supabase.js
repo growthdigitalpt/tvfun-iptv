@@ -72,7 +72,10 @@ const TVFunDB = {
     const { data, error } = await _sb.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { data: { name: name.trim() } },
+      options: {
+        data: { name: name.trim() },
+        emailRedirectTo: `${location.origin}/login.html?confirmed=1`,
+      },
     });
     if (error) {
       const msg = error.message.includes('already registered') ? 'E-mail já cadastrado.' : error.message;
@@ -90,7 +93,7 @@ const TVFunDB = {
   async resetPassword(email) {
     if (!_sb) return { error: 'Supabase não configurado.' };
     const { error } = await _sb.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${location.origin}/streaming/login.html?reset=1`,
+      redirectTo: `${location.origin}/login.html?reset=1`,
     });
     return error ? { error: error.message } : { ok: true };
   },
