@@ -229,8 +229,42 @@ const TVFunDB = {
     return `http://${host}/get.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&type=m3u_plus&output=mpegts`;
   },
 
-  // Retorna a m3u pronta do usuário (do campo salvo, ou montada do user/senha)
+  // ── Troca manual das credenciais do servidor (override local, efeito imediato) ──
+  credOverride() {
+    try { const o = JSON.parse(localStorage.getItem('tvfun_cred_override') || 'null'); return (o && o.iptv_username && o.iptv_password) ? o : null; } catch { return null; }
+  },
+
+  // Salva novo usuário/senha do servidor Alpha. Funciona na hora (localStorage);
+  // tenta também persistir no Supabase (cross-device) — só grava se houver policy de escrita.
+  async saveCredentials(username, password, host) {
+    const u = (username || '').trim();
+    const p = (password || '').trim();
+    const h = (host || 'alphapublic.top').trim();
+    if (!u || !p) return { error: 'Informe usuário e senha.' };
+    try { localStorage.setItem('tvfun_cred_override', JSON.stringify({ iptv_username: u, iptv_password: p, panel_host: h })); } catch {}
+    let synced = false;
+    try {
+      const user = await this.getUser();
+      if (user && _sb) {
+        const existing = await this.getAnyCredential();
+        if (existing) {
+          const { error } = await _sb.from('iptv_credentials')
+            .update({ iptv_username: u, iptv_password: p, panel_host: h, m3u_url: null }).eq('id', existing.id);
+          synced = !error;
+        } else {
+          const { error } = await _sb.from('iptv_credentials')
+            .insert({ user_id: user.id, iptv_username: u, iptv_password: p, panel_host: h, status: 'active' });
+          synced = !error;
+        }
+      }
+    } catch {}
+    return { ok: true, synced };
+  },
+
+  // Retorna a m3u pronta do usuário (override manual > campo salvo > user/senha)
   async getMyM3uUrl() {
+    const o = this.credOverride();
+    if (o) return this.buildM3uUrl(o.iptv_username, o.iptv_password, o.panel_host || 'alphapublic.top');
     const c = await this.getActiveCredentials();
     if (!c) return null;
     if (c.m3u_url) return c.m3u_url;

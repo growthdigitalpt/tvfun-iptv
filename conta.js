@@ -289,19 +289,46 @@
   function renderIptvAccess(cred) {
     const card = document.getElementById('iptvAccessCard');
     if (!card) return;
-    if (!cred || !cred.iptv_username) { card.style.display = 'none'; return; }
-    card.style.display = '';
-    setText('iptvUser', cred.iptv_username);
-    setText('iptvPass', cred.iptv_password || '—');
-    const tel = cred.max_connections || 1;
+    card.style.display = '';   // sempre visível (permite cadastrar/alterar credenciais)
+    const ov = (TVFunDB.credOverride && TVFunDB.credOverride()) || null;
+    const eff = ov || cred || {};
+    setText('iptvUser', eff.iptv_username || '—');
+    setText('iptvPass', eff.iptv_password || '—');
+    const tel = (cred && cred.max_connections) || 1;
     setText('iptvScreens', tel + ' tela' + (tel > 1 ? 's' : ''));
-    setText('iptvExpiry', cred.expires_at ? fmtDate(cred.expires_at) + (cred.is_trial ? ' (teste)' : '') : '—');
+    setText('iptvExpiry', (cred && cred.expires_at) ? fmtDate(cred.expires_at) + (cred.is_trial ? ' (teste)' : '') : '—');
+    // pré-preenche o formulário de edição
+    const cu = document.getElementById('credUser'); if (cu) cu.value = eff.iptv_username || '';
+    const cp = document.getElementById('credPass'); if (cp) cp.value = eff.iptv_password || '';
     const copyBtn = document.getElementById('btnCopyM3u');
     if (copyBtn) copyBtn.onclick = async () => {
-      const url = cred.m3u_url || TVFunDB.buildM3uUrl(cred.iptv_username, cred.iptv_password, cred.panel_host || 'alphapublic.top');
+      const url = (eff.iptv_username && eff.iptv_password)
+        ? TVFunDB.buildM3uUrl(eff.iptv_username, eff.iptv_password, eff.panel_host || 'alphapublic.top')
+        : ((cred && cred.m3u_url) || '');
+      if (!url) { toast('Sem credenciais ainda — preencha abaixo.', true); return; }
       try { await navigator.clipboard.writeText(url); } catch {}
       toast('✓ Link da lista copiado!');
     };
+  }
+
+  // ===== ALTERAR CREDENCIAIS DO SERVIDOR (usuário/senha do Alpha) =====
+  function setupCredForm() {
+    const form = document.getElementById('formCred');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const u = document.getElementById('credUser').value.trim();
+      const p = document.getElementById('credPass').value.trim();
+      if (!u || !p) { toast('⚠ Informe usuário e senha', true); return; }
+      if (typeof TVFunDB === 'undefined' || !TVFunDB.saveCredentials) { toast('⚠ Indisponível agora', true); return; }
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
+      const r = await TVFunDB.saveCredentials(u, p);
+      if (btn) { btn.disabled = false; btn.textContent = 'Salvar credenciais'; }
+      if (r.error) { toast('⚠ ' + r.error, true); return; }
+      setText('iptvUser', u); setText('iptvPass', p);
+      toast(r.synced ? '✓ Credenciais salvas e sincronizadas!' : '✓ Credenciais salvas! A lista recarrega no app.');
+    });
   }
 
   function renderBilling(subs) {
@@ -430,6 +457,7 @@
     setupLogout();
     setupCancel();
     setupCard();
+    setupCredForm();
   }
 
   document.addEventListener('DOMContentLoaded', () => init().catch(console.error));

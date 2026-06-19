@@ -325,6 +325,21 @@ input, select, textarea { font-family: inherit; }
 .btn-primary:hover { background: #c40811; transform: scale(1.02); }
 .btn-primary.disabled { background: rgba(229,9,20,.4); cursor: not-allowed; transform: none; }
 
+/* ── Alterar credenciais do servidor (card Acesso IPTV) ── */
+.cred-form { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); }
+.cred-form-title { font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 12px; }
+.cred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cred-field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--gray2); }
+.cred-field input {
+  background: var(--bg4); border: 1px solid rgba(255,255,255,.10); border-radius: var(--radius);
+  padding: 11px 13px; color: var(--white); font-size: 14px; font-family: inherit; transition: border-color .15s;
+}
+.cred-field input:focus { outline: none; border-color: var(--red); }
+.cred-actions { margin-top: 14px; }
+.cred-actions .btn-primary { width: auto; padding: 10px 22px; }
+.cred-hint { margin-top: 10px; font-size: 12.5px; color: var(--gray); }
+@media (max-width: 560px) { .cred-grid { grid-template-columns: 1fr; } }
+
 .btn-outline {
   background: transparent;
   border: 1px solid rgba(255,255,255,.25);

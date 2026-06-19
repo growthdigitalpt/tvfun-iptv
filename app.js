@@ -1316,14 +1316,21 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     document.getElementById('btnFS').addEventListener('click', async () => {
       const w = document.getElementById('playerWrap');
-      if (document.fullscreenElement) {
+      const vid = document.getElementById('videoEl');
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
         (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
-      } else {
-        try { await (w.requestFullscreen?.() || w.webkitRequestFullscreen?.()); } catch {}
-        // Celular: deita a tela (90°), preenche tudo e segue o giroscópio (paisagem nos dois sentidos)
-        if (matchMedia('(pointer: coarse)').matches && screen.orientation && screen.orientation.lock) {
-          try { await screen.orientation.lock('landscape'); } catch {}
-        }
+        return;
+      }
+      // iPhone: <div> NÃO suporta Fullscreen API — usa o fullscreen NATIVO do <video>
+      // (preenche a tela toda e gira sozinho com o giroscópio do aparelho).
+      const elemFS = w.requestFullscreen || w.webkitRequestFullscreen;
+      if (!elemFS && vid && typeof vid.webkitEnterFullscreen === 'function') {
+        try { vid.webkitEnterFullscreen(); return; } catch {}
+      }
+      // Desktop / Android / iPad: fullscreen do container + trava paisagem no celular
+      try { await (w.requestFullscreen?.() || w.webkitRequestFullscreen?.()); } catch {}
+      if (matchMedia('(pointer: coarse)').matches && screen.orientation && screen.orientation.lock) {
+        try { await screen.orientation.lock('landscape'); } catch {}
       }
     });
     // Ao sair do fullscreen (botão, gesto do sistema ou ESC) → libera a orientação

@@ -164,7 +164,7 @@
         </div>
 
         <!-- ===== ACESSO IPTV (credenciais reais) ===== -->
-        <div class="card" id="iptvAccessCard" style="display:none">
+        <div class="card" id="iptvAccessCard">
           <div class="card-title">🔑 Seu acesso IPTV</div>
           <div class="pref-list">
             <div class="pref-item"><div><p class="pref-label">Usuário</p></div><span class="pref-select" id="iptvUser" style="cursor:default">—</span></div>
@@ -173,6 +173,23 @@
             <div class="pref-item"><div><p class="pref-label">Validade do acesso</p></div><span class="pref-select" id="iptvExpiry" style="cursor:default">—</span></div>
             <div class="pref-item"><div><p class="pref-label">Link da lista (m3u)</p><p class="pref-desc">Já carrega sozinho no app — copie só se precisar usar em outro player.</p></div><button class="btn-outline sm" id="btnCopyM3u">Copiar link</button></div>
           </div>
+
+          <!-- Alterar usuário/senha do servidor Alpha -->
+          <form id="formCred" class="cred-form">
+            <p class="cred-form-title">✏️ Alterar usuário e senha (servidor Alpha)</p>
+            <div class="cred-grid">
+              <label class="cred-field">Usuário
+                <input type="text" id="credUser" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="usuário do servidor">
+              </label>
+              <label class="cred-field">Senha
+                <input type="text" id="credPass" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="senha do servidor">
+              </label>
+            </div>
+            <div class="cred-actions">
+              <button type="submit" class="btn-primary sm">Salvar credenciais</button>
+            </div>
+            <p class="cred-hint">Depois de salvar, a lista do app recarrega com o novo acesso.</p>
+          </form>
         </div>
 
         <h2 class="sub-title">Mudar de plano</h2>
