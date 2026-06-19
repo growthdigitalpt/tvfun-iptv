@@ -248,13 +248,13 @@ const TVFunDB = {
       if (user && _sb) {
         const existing = await this.getAnyCredential();
         if (existing) {
-          const { error } = await _sb.from('iptv_credentials')
-            .update({ iptv_username: u, iptv_password: p, panel_host: h, m3u_url: null }).eq('id', existing.id);
-          synced = !error;
+          const { data, error } = await _sb.from('iptv_credentials')
+            .update({ iptv_username: u, iptv_password: p, panel_host: h, m3u_url: null }).eq('id', existing.id).select();
+          synced = !error && Array.isArray(data) && data.length > 0; // RLS bloqueia sem erro → 0 linhas
         } else {
-          const { error } = await _sb.from('iptv_credentials')
-            .insert({ user_id: user.id, iptv_username: u, iptv_password: p, panel_host: h, status: 'active' });
-          synced = !error;
+          const { data, error } = await _sb.from('iptv_credentials')
+            .insert({ user_id: user.id, iptv_username: u, iptv_password: p, panel_host: h, status: 'active' }).select();
+          synced = !error && Array.isArray(data) && data.length > 0;
         }
       }
     } catch {}
