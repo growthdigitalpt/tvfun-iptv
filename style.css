@@ -726,6 +726,19 @@ input { font-family: inherit; }
 .player-wrap:-webkit-full-screen .video-el { width: 100%; height: 100vh; max-height: 100vh; object-fit: contain; }
 .player-wrap:fullscreen .player-controls, .player-wrap:-webkit-full-screen .player-controls { padding-bottom: 28px; }
 
+/* iPhone: paisagem FORÇADA (gira o player 90° e preenche a tela). Funciona mesmo com
+   o bloqueio de rotação do iPhone ligado, onde a Fullscreen API e o orientation.lock falham. */
+.player-wrap.ios-fs {
+  position: fixed; top: 50%; left: 50%;
+  width: 100vh; height: 100vw; max-width: none; margin: 0; border-radius: 0;
+  transform: translate(-50%, -50%) rotate(90deg); transform-origin: center center;
+  z-index: 100000; background: #000;
+  display: flex; align-items: center; justify-content: center;
+}
+.player-wrap.ios-fs .video-el { width: 100%; height: 100%; max-height: none; object-fit: contain; }
+.player-wrap.ios-fs .player-controls { padding-bottom: 22px; }
+html.ios-fs-on, html.ios-fs-on body { overflow: hidden; }
+
 .player-loading { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.5); pointer-events: none; }
 .player-loading.active { display: flex; }
 .spinner { width: 42px; height: 42px; border: 3px solid rgba(255,255,255,.12); border-top-color: var(--white); border-radius: 50%; animation: spin .8s linear infinite; }

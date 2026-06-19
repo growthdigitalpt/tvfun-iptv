@@ -1187,6 +1187,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     clearTimeout(state.hideCtrlTimer);
     clearInterval(state.stallTimer);
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    document.getElementById('playerWrap')?.classList.remove('ios-fs');   // sai da paisagem forçada (iPhone)
+    document.documentElement.classList.remove('ios-fs-on');
     document.getElementById('playerModal').classList.remove('open');
     document.body.style.overflow = '';
     state.currentChannel = null;
@@ -1316,18 +1318,22 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     document.getElementById('btnFS').addEventListener('click', async () => {
       const w = document.getElementById('playerWrap');
-      const vid = document.getElementById('videoEl');
+      const elemFS = w.requestFullscreen || w.webkitRequestFullscreen;
+
+      // iPhone: <div> NÃO suporta a Fullscreen API e screen.orientation.lock não existe.
+      // Então forçamos PAISAGEM via CSS (gira o player 90° e preenche a tela). Funciona
+      // mesmo com o bloqueio de rotação do iPhone ligado. Toca de novo para sair.
+      if (!elemFS) {
+        const on = w.classList.toggle('ios-fs');
+        document.documentElement.classList.toggle('ios-fs-on', on);
+        return;
+      }
+
+      // Desktop / Android / iPad
       if (document.fullscreenElement || document.webkitFullscreenElement) {
         (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
         return;
       }
-      // iPhone: <div> NÃO suporta Fullscreen API — usa o fullscreen NATIVO do <video>
-      // (preenche a tela toda e gira sozinho com o giroscópio do aparelho).
-      const elemFS = w.requestFullscreen || w.webkitRequestFullscreen;
-      if (!elemFS && vid && typeof vid.webkitEnterFullscreen === 'function') {
-        try { vid.webkitEnterFullscreen(); return; } catch {}
-      }
-      // Desktop / Android / iPad: fullscreen do container + trava paisagem no celular
       try { await (w.requestFullscreen?.() || w.webkitRequestFullscreen?.()); } catch {}
       if (matchMedia('(pointer: coarse)').matches && screen.orientation && screen.orientation.lock) {
         try { await screen.orientation.lock('landscape'); } catch {}
