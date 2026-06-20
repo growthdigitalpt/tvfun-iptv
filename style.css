@@ -796,6 +796,21 @@ html.ios-fs-on, html.ios-fs-on body { overflow: hidden; }
 .player-center-btn:active { transform: translate(-50%, -50%) scale(.92); }
 .player-wrap.ctrl-on .player-center-btn { opacity: 1; pointer-events: auto; }
 
+/* Botão "Próximo episódio" — canto inferior direito, aparece no último minuto */
+.next-ep-btn {
+  position: absolute; right: 22px; bottom: 88px; z-index: 9;
+  display: inline-flex; align-items: center; gap: 9px;
+  background: rgba(18,18,22,.9); border: 1px solid rgba(255,255,255,.28); color: #fff;
+  font-weight: 700; font-size: 14px; padding: 11px 17px; border-radius: 10px; cursor: pointer;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  transition: background .15s, border-color .15s, transform .12s; animation: nextEpIn .3s ease;
+}
+.next-ep-btn:hover { background: var(--red); border-color: var(--red); }
+.next-ep-btn:active { transform: scale(.96); }
+.next-ep-btn[hidden] { display: none; }
+@keyframes nextEpIn { from { opacity: 0; transform: translateY(10px); } }
+@media (max-width: 600px) { .next-ep-btn { right: 14px; bottom: 78px; font-size: 12.5px; padding: 9px 13px; } }
+
 /* Canais ao vivo: sem play/avançar/retroceder, barra de progresso nem botão central (não dá pra pausar/seek live) */
 .player-wrap.live #btnPlay,
 .player-wrap.live #btnRew,

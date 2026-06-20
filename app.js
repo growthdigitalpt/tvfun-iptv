@@ -73,6 +73,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     currentChannel: null,
     searchOpen: false,
     hideCtrlTimer: null,
+    episodeQueue: null,                         // fila ordenada de episódios da série atual
+    episodeIndex: -1,                           // posição do episódio atual na fila
     // Separação por tipo de conteúdo
     listUrl: null,
     activeKind: 'live',                         // live | movie | series
@@ -939,6 +941,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     if (seriesProg) document.getElementById('seriesContinue').addEventListener('click', () => {
       closeSeries();
+      state.episodeQueue = buildEpisodeQueue(data);
+      state.episodeIndex = state.episodeQueue.findIndex(e => e.url === seriesProg.url);
       openPlayer({ name: seriesProg.name, url: seriesProg.url, group: seriesProg.group || item.group, logo: seriesProg.logo, kind: 'series', id: seriesProg.id }, seriesProg.position);
     });
 
@@ -973,10 +977,33 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
         <div class="episode-play"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>`;
       row.addEventListener('click', () => {
         closeSeries();
-        askResume({ name: ep.name, url: ep.url, group: data.group, logo: ep.logo || data.logo, kind: 'series', id: ep.url });
+        state.episodeQueue = buildEpisodeQueue(data);
+        state.episodeIndex = state.episodeQueue.findIndex(e => e.url === ep.url);
+        askResume(epToChannel(ep, data));
       });
       list.appendChild(row);
     });
+  }
+
+  // ===== FILA DE EPISÓDIOS (próximo episódio + autoplay até acabar) =====
+  function epToChannel(ep, data) {
+    return { name: ep.name, url: ep.url, group: data.group, logo: ep.logo || data.logo, kind: 'series', id: ep.url };
+  }
+  function buildEpisodeQueue(data) {
+    const seasons = Object.keys(data.seasons).map(Number).sort((a, b) => a - b);
+    const q = [];
+    seasons.forEach(s => (data.seasons[s] || []).forEach(ep => { if (ep.url) q.push(epToChannel(ep, data)); }));
+    return q;
+  }
+  function playNextEpisode() {
+    if (!state.episodeQueue || state.episodeIndex < 0) return false;
+    const next = state.episodeQueue[state.episodeIndex + 1];
+    if (!next) return false;
+    // marca o episódio atual como concluído (sai do "continuar assistindo")
+    const v = document.getElementById('videoEl');
+    if (state.currentChannel && v && v.duration) saveProgressBoth(state.currentChannel, v.duration, v.duration);
+    openPlayer(next, 0);   // o próximo episódio sempre começa do início
+    return true;
   }
 
   function closeSeries() {
@@ -1106,6 +1133,13 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     state.currentChannel = ch;
     addRecent(ch);
 
+    // Fila de episódios: mantém só se este conteúdo pertence a ela; senão zera (filme/canal/outra série)
+    if (ch && ch.kind === 'series' && state.episodeQueue && state.episodeQueue.some(e => e.url === ch.url)) {
+      state.episodeIndex = state.episodeQueue.findIndex(e => e.url === ch.url);
+    } else {
+      state.episodeQueue = null; state.episodeIndex = -1;
+    }
+
     const modal = document.getElementById('playerModal');
     const videoEl = document.getElementById('videoEl');
     const isVOD = (ch.kind === 'movie' || ch.kind === 'series') || /\/(movie|series)\//i.test(ch.url || '');
@@ -1221,6 +1255,8 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     document.getElementById('playerWrap')?.classList.remove('ios-fs');   // sai da paisagem forçada (iPhone)
     document.documentElement.classList.remove('ios-fs-on');
+    document.getElementById('btnNextEp')?.setAttribute('hidden', '');    // esconde "próximo episódio"
+    state.episodeQueue = null; state.episodeIndex = -1;
     document.getElementById('playerModal').classList.remove('open');
     document.body.style.overflow = '';
     state.currentChannel = null;
@@ -1259,6 +1295,32 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     const btnPlay = document.getElementById('btnPlay');
     const iconPlay = document.getElementById('iconPlay');
 
+    // ── Botão "Próximo episódio" (canto inferior direito) + autoplay ao terminar ──
+    const playerWrap = document.getElementById('playerWrap');
+    let nextEpBtn = document.getElementById('btnNextEp');
+    if (!nextEpBtn) {
+      nextEpBtn = document.createElement('button');
+      nextEpBtn.id = 'btnNextEp';
+      nextEpBtn.className = 'next-ep-btn';
+      nextEpBtn.hidden = true;
+      nextEpBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><polygon points="5 4 15 12 5 20"/><rect x="16" y="4" width="2.4" height="16" rx="1"/></svg><span>Próximo episódio</span>';
+      nextEpBtn.addEventListener('click', (e) => { e.stopPropagation(); playNextEpisode(); });
+      playerWrap.appendChild(nextEpBtn);
+    }
+    const hasNextEp = () => !!(state.episodeQueue && state.episodeIndex >= 0 && state.episodeIndex < state.episodeQueue.length - 1);
+    const updateNextEpBtn = () => {
+      const rem = video.duration - video.currentTime;
+      nextEpBtn.hidden = !(state.currentIsVOD && hasNextEp() && isFinite(rem) && rem > 0 && rem <= 60);
+    };
+    // Autoplay: quando o episódio termina, toca o próximo — sempre, até não ter mais
+    video.addEventListener('ended', () => {
+      if (hasNextEp()) { nextEpBtn.hidden = true; playNextEpisode(); return; }
+      // último episódio (ou filme): marca como concluído
+      if (state.currentIsVOD && state.currentChannel && video.duration) {
+        saveProgressBoth(state.currentChannel, video.duration, video.duration);
+      }
+    });
+
     video.addEventListener('timeupdate', () => {
       if (!video.duration || !isFinite(video.duration)) return;
       const pct = (video.currentTime / video.duration) * 100;
@@ -1276,6 +1338,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
           if (ch) saveProgressBoth(ch, video.currentTime, video.duration);
         }
       }
+      updateNextEpBtn();
     });
     video.addEventListener('play', () => { iconPlay.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'; });
     video.addEventListener('pause', () => { iconPlay.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>'; });
