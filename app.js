@@ -1006,6 +1006,24 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     return true;
   }
 
+  // Monta a fila on-demand quando o episódio é tocado FORA da página da série
+  // (ex.: "Continuar assistindo" da home, recentes) — busca os episódios da série.
+  async function ensureEpisodeQueue(ch) {
+    try {
+      if (!ch || ch.kind !== 'series' || !ch.url || !state.listUrl) return;
+      if (state.episodeQueue && state.episodeQueue.some(e => e.url === ch.url)) return;
+      // o servidor acha a série pela URL do episódio (robusto — sem adivinhar o nome)
+      const er = await fetch('/api/episodes?url=' + encodeURIComponent(state.listUrl) + '&epurl=' + encodeURIComponent(ch.url)).then(r => r.json());
+      const seasons = er && er.seasons;
+      if (!seasons) return;
+      const q = [];
+      Object.keys(seasons).map(Number).sort((a, b) => a - b)
+        .forEach(s => (seasons[s] || []).forEach(ep => { if (ep.url) q.push({ name: ep.name, url: ep.url, group: ch.group, logo: ep.logo || ch.logo, kind: 'series', id: ep.url }); }));
+      const idx = q.findIndex(e => e.url === ch.url);
+      if (idx >= 0) { state.episodeQueue = q; state.episodeIndex = idx; }
+    } catch {}
+  }
+
   function closeSeries() {
     document.getElementById('seriesModal').classList.remove('open');
     if (!document.getElementById('playerModal').classList.contains('open')) document.body.style.overflow = '';
@@ -1138,6 +1156,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       state.episodeIndex = state.episodeQueue.findIndex(e => e.url === ch.url);
     } else {
       state.episodeQueue = null; state.episodeIndex = -1;
+      if (ch && ch.kind === 'series' && ch.url) ensureEpisodeQueue(ch);   // monta on-demand (home/recentes)
     }
 
     const modal = document.getElementById('playerModal');

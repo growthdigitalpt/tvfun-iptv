@@ -200,10 +200,19 @@ async function handleEpisodes(req, res, urlObj) {
   const m3uUrl = urlObj.searchParams.get('url');
   const series = urlObj.searchParams.get('series');
   const group = urlObj.searchParams.get('group') || '';
-  if (!m3uUrl || !series) return json(res, 400, { error: 'parâmetros url e series obrigatórios' });
+  const epurl = urlObj.searchParams.get('epurl');   // acha a série pela URL de um episódio (robusto)
+  if (!m3uUrl || (!series && !epurl)) return json(res, 400, { error: 'parâmetros url e (series ou epurl) obrigatórios' });
 
   try {
     const proc = await getProcessed(m3uUrl);
+    if (epurl) {
+      const sx = [...proc.seriesIndex.values()].find(x => x.episodes.some(e => e.url === epurl));
+      if (!sx) return json(res, 404, { error: 'serie nao encontrada' });
+      const epsx = [...sx.episodes].sort((a, b) => (a.season - b.season) || (a.episode - b.episode));
+      const seasonsx = {};
+      for (const e of epsx) { (seasonsx[e.season] = seasonsx[e.season] || []).push({ name: e.name, url: e.url, season: e.season, episode: e.episode, logo: e.logo }); }
+      return json(res, 200, { series: sx.series, group: sx.group, logo: sx.logo, total: epsx.length, seasons: seasonsx });
+    }
     const s = proc.seriesIndex.get(series + '\u0000' + group) ||
               [...proc.seriesIndex.values()].find(x => x.series === series);
     if (!s) return json(res, 404, { error: 'série não encontrada' });
