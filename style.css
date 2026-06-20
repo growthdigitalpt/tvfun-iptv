@@ -64,18 +64,20 @@ input { font-family: inherit; }
 .kind-tab.active .kind-count { background: rgba(255,255,255,.2); opacity: 1; }
 
 /* Category pills in navbar */
-.nav-cats-wrap { display: flex; align-items: center; gap: 4px; flex: 1; overflow: hidden; z-index: 1; min-width: 0; }
+.nav-cats-wrap { position: relative; display: flex; align-items: center; gap: 4px; flex: 1; overflow: hidden; z-index: 1; min-width: 0; }
+/* degradê nas pontas (onde ficam as setas) — as categorias somem suave, sem corte seco */
+.nav-cats-wrap::before, .nav-cats-wrap::after { content: ''; position: absolute; top: 0; bottom: 0; width: 32px; z-index: 2; pointer-events: none; }
+.nav-cats-wrap::before { left: 0;  background: linear-gradient(to right, rgb(10,10,12) 28%, rgba(10,10,12,0)); }
+.nav-cats-wrap::after  { right: 0; background: linear-gradient(to left,  rgb(10,10,12) 28%, rgba(10,10,12,0)); }
 .nav-cats {
   display: flex; align-items: center; gap: 6px;
   overflow-x: auto; scroll-behavior: smooth;
   scrollbar-width: none; padding: 4px 2px;
   flex: 1;
-  /* extremidades em degradê (sem bordas duras ao rolar as categorias) */
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
 }
 .nav-cats::-webkit-scrollbar { display: none; }
 .cat-arrow {
+  position: relative; z-index: 3;
   background: none; border: none; color: var(--gray2);
   padding: 4px; display: flex; align-items: center; flex-shrink: 0;
   transition: color .2s; opacity: .7;
