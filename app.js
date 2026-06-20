@@ -543,11 +543,9 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     if (group === 'all') {
       const continuar = (state.progressList || []).filter(p => (p.kind || 'movie') === kind).map(p => ({ ...p, _resume: true }));
       if (continuar.length) buildRow('▶ Continuar assistindo', continuar, wrap);
-      if (recents.length) buildRow('🕐 Recentes', recents, wrap);
       if (favs.length) buildRow('❤ Favoritos', favs, wrap);
     }
     if (group === 'Favoritos') { buildRow('❤ Favoritos', favs, wrap); return; }
-    if (group === 'Recentes') { buildRow('🕐 Recentes', recents, wrap); return; }
 
     // Group rows
     const grouped = {};
@@ -621,7 +619,6 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     const grouped = {};
     channels.forEach(c => { (grouped[c.group] = grouped[c.group] || []).push(c); });
     const cats = [];
-    if (recents.length) cats.push({ key: 'Recentes', label: '🕐 Recentes', items: recents });
     if (favs.length) cats.push({ key: 'Favoritos', label: '❤ Favoritos', items: favs });
     Object.keys(grouped).sort().forEach(g => cats.push({ key: g, label: g, items: grouped[g] }));
 
@@ -1357,7 +1354,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     const open = () => { modal.classList.add('open'); document.body.style.overflow = 'hidden'; renderSavedLists(); };
     const close = () => { modal.classList.remove('open'); document.body.style.overflow = ''; };
 
-    document.getElementById('btnAddList').addEventListener('click', open);
+    document.getElementById('btnAddList')?.addEventListener('click', open);   // botão removido do cabeçalho
     document.getElementById('btnHeroImport')?.addEventListener('click', open);
     document.getElementById('importClose').addEventListener('click', close);
     document.getElementById('importBg').addEventListener('click', close);
@@ -1555,7 +1552,6 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     const pills = [
       { label: 'Todos', group: 'all' },
       { label: '❤ Favoritos', group: 'Favoritos' },
-      { label: '🕐 Recentes', group: 'Recentes' },
       ...groups.map(g => ({ label: g, group: g })),
     ];
 

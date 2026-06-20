@@ -258,6 +258,9 @@ const TVFunDB = {
         }
       }
     } catch {}
+    // Se gravou no Supabase, o override local sai de cena: o Supabase vira a fonte
+    // da verdade e TODOS os aparelhos do usuário passam a ler o mesmo valor.
+    if (synced) { try { localStorage.removeItem('tvfun_cred_override'); } catch {} }
     return { ok: true, synced };
   },
 

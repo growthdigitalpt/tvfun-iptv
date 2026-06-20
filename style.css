@@ -70,6 +70,9 @@ input { font-family: inherit; }
   overflow-x: auto; scroll-behavior: smooth;
   scrollbar-width: none; padding: 4px 2px;
   flex: 1;
+  /* extremidades em degradê (sem bordas duras ao rolar as categorias) */
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
 }
 .nav-cats::-webkit-scrollbar { display: none; }
 .cat-arrow {
@@ -750,11 +753,12 @@ html.ios-fs-on, html.ios-fs-on body { overflow: hidden; }
   background: linear-gradient(to top, rgba(0,0,0,.88) 0%, transparent 100%);
   opacity: 0; transition: opacity .3s;
 }
-.player-wrap:hover .player-controls { opacity: 1; }
 
-/* ===== Botão central play/pause + visibilidade dos controles por toque ===== */
+/* ===== Botão central play/pause + visibilidade dos controles ===== */
+/* Os controles aparecem só com .ctrl-on (mousemove/toque) e somem após 3s.
+   Sem regra :hover de propósito — no PC ela manteria os botões sempre visíveis
+   e no celular o :hover "gruda" após o toque, quebrando o tap-pra-esconder. */
 .player-top-bar { opacity: 0; transition: opacity .3s; }   /* topo aparece/some junto com os controles */
-.player-wrap:hover .player-top-bar,
 .player-wrap.ctrl-on .player-top-bar,
 .player-wrap.ctrl-on .player-controls { opacity: 1; }
 
@@ -768,7 +772,6 @@ html.ios-fs-on, html.ios-fs-on body { overflow: hidden; }
 }
 .player-center-btn svg { width: 34px; height: 34px; }
 .player-center-btn:active { transform: translate(-50%, -50%) scale(.92); }
-.player-wrap:hover .player-center-btn,
 .player-wrap.ctrl-on .player-center-btn { opacity: 1; pointer-events: auto; }
 
 /* Canais ao vivo: sem play/avançar/retroceder, barra de progresso nem botão central (não dá pra pausar/seek live) */
