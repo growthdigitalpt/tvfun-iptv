@@ -568,7 +568,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     row.innerHTML = `
       <div class="row-header">
         <h2 class="row-title">${title}</h2>
-        <span class="row-count">${channels.length} canal${channels.length !== 1 ? 'is' : ''}</span>
+        <button class="row-seeall" type="button">Ver tudo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg></button>
       </div>
       <div class="row-scroller-wrap">
         <button class="scroll-arrow left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -597,6 +597,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     row.querySelector('.scroll-arrow.left').onclick = () => scroller.scrollBy({ left: -600, behavior: 'smooth' });
     row.querySelector('.scroll-arrow.right').onclick = () => { renderBatch(); scroller.scrollBy({ left: 600, behavior: 'smooth' }); };
+    row.querySelector('.row-seeall').onclick = () => openCategoryGrid(title, channels);
     wrap.appendChild(row);
 
     // só monta os cards quando a fileira chega perto da viewport
@@ -606,6 +607,40 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       }, { rootMargin: '300px' });
       io.observe(row);
     } else { renderBatch(); fillToScroll(); }
+  }
+
+  // ===== GRID "VER TUDO" — todos os títulos de uma categoria numa grade =====
+  function openCategoryGrid(title, items) {
+    const wrap = document.getElementById('mainContent');
+    wrap.innerHTML =
+      '<div class="cat-grid-head">' +
+        '<button class="cat-grid-back" id="catGridBack">← Voltar</button>' +
+        '<h2 class="cat-grid-title"></h2>' +
+        '<span class="cat-grid-count"></span>' +
+      '</div>' +
+      '<div class="cat-grid" id="catGrid"></div>' +
+      '<div id="catGridSentinel" style="height:1px"></div>';
+    wrap.querySelector('.cat-grid-title').textContent = title;
+    wrap.querySelector('.cat-grid-count').textContent = items.length + ' título' + (items.length !== 1 ? 's' : '');
+    const grid = document.getElementById('catGrid');
+    let rendered = 0;
+    const BATCH = 60;
+    const renderBatch = () => {
+      const end = Math.min(rendered + BATCH, items.length);
+      const frag = document.createDocumentFragment();
+      for (; rendered < end; rendered++) frag.appendChild(buildCard(items[rendered]));
+      grid.appendChild(frag);
+    };
+    renderBatch();
+    const sentinel = document.getElementById('catGridSentinel');
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) { renderBatch(); if (rendered >= items.length) io.disconnect(); }
+      }, { rootMargin: '700px' });
+      io.observe(sentinel);
+    }
+    document.getElementById('catGridBack').addEventListener('click', () => renderRows());
+    window.scrollTo({ top: 0 });
   }
 
   // ===== LISTA DE CANAIS (estilo guia de TV / pay-per-view) =====
