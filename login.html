@@ -218,7 +218,7 @@
       const user = await TVFunDB.getUser();
       if (user) {
         const [sub, cred] = await Promise.all([TVFunDB.getActiveSubscription(), TVFunDB.getActiveCredentials()]);
-        window.location.href = (sub || cred) ? 'index.html' : 'planos.html';
+        window.location.href = 'index.html';   // já logado → app
         return;
       }
     } catch {}
@@ -278,7 +278,7 @@
       setLoading('btnLogin', false);
       if (r.error) { showError('loginError', r.error); return; }
       const active = await TVFunDB.isPlanActive();
-      window.location.href = active ? 'index.html' : 'planos.html?action=new';
+      window.location.href = 'index.html';   // após login → app (trial/assinatura tratados lá dentro)
     });
 
     document.getElementById('loginPassword').addEventListener('keydown', e => {
@@ -311,7 +311,7 @@
         document.getElementById('registerError').style.color = '#1db954';
         return;
       }
-      window.location.href = 'planos.html?action=new';
+      window.location.href = 'index.html';   // após cadastro → app (onde está o botão de teste grátis)
     });
 
     // ── ESQUECI A SENHA ───────────────────

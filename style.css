@@ -397,9 +397,9 @@ input { font-family: inherit; }
 .poster-hover {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px;
   background: linear-gradient(to top, rgba(0,0,0,.55), transparent 60%);
-  opacity: 0; transition: opacity .25s;
+  opacity: 0; transition: opacity .25s; pointer-events: none;   /* escondido = não clicável (no toque, tocar no card só ABRE, não favorita) */
 }
-.card.poster:hover .poster-hover { opacity: 1; }
+.card.poster:hover .poster-hover { opacity: 1; pointer-events: auto; }
 .poster-play, .poster-fav {
   width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center; transition: transform .2s;

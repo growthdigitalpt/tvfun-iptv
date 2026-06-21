@@ -543,7 +543,18 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     // Special rows always shown (if they have content)
     if (group === 'all') {
-      const continuar = (state.progressList || []).filter(p => (p.kind || 'movie') === kind).map(p => ({ ...p, _resume: true }));
+      const continuar = (state.progressList || []).filter(p => (p.kind || 'movie') === kind).map(p => {
+        let logo = p.logo;
+        // capa salva de episódio costuma ser o tvg-logo errado da M3U → usa a capa da série carregada (match pelo nome)
+        if (kind === 'series' && p.name) {
+          let best = null;
+          for (const c of state.channels) {
+            if (c.kind === 'series' && c.name && c.name.length > 3 && p.name.startsWith(c.name) && (!best || c.name.length > best.name.length)) best = c;
+          }
+          if (best && best.logo) logo = best.logo;
+        }
+        return { ...p, logo, _resume: true };
+      });
       if (continuar.length) buildRow('▶ Continuar assistindo', continuar, wrap);
       if (favs.length) buildRow('❤ Favoritos', favs, wrap);
     }
