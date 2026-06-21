@@ -794,7 +794,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     // Clique: filme → página de detalhes; série → detalhes/episódios; canal → player
     const open = (e) => {
       e.stopPropagation();
-      if (ch._resume) return openPlayer(ch, ch.position || 0);        // continuar assistindo → resume direto
+      if (ch._resume) return openPlayer(ch, (ch.duration && ch.position >= ch.duration * 0.95) ? 0 : (ch.position || 0)); // resume; concluído → do início
       if (isSeries) return ch.url ? askResume(ch) : openSeries(ch);   // episódio (tem URL) → pergunta; série (sem URL) abre lista
       return kind === 'movie' ? openMovieDetail(ch) : openPlayer(ch);
     };
@@ -1093,9 +1093,10 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     m[cid] = { id: cid, name: ch.name || '', logo: ch.logo || '', group: ch.group || '', url: ch.url || '', kind: ch.kind || 'movie', position: Math.floor(pos || 0), duration: Math.floor(dur || 0), updated: Date.now() };
     try { localStorage.setItem(PROG_KEY, JSON.stringify(m)); } catch {}
   }
-  const _validProg = (e) => e && e.position > 30 && (!e.duration || e.position < e.duration * 0.95);
+  const _validProg = (e) => e && e.position > 30 && (!e.duration || e.position < e.duration * 0.95);  // p/ RESUME (só no meio)
+  const _recentProg = (e) => e && e.position > 60;  // p/ a LISTA "continuar/assistidos" (inclui concluídos, vira histórico)
   function localProgress(cid) { const e = localProgressMap()[String(cid)]; return _validProg(e) ? e.position : 0; }
-  function localProgressList() { return Object.values(localProgressMap()).filter(_validProg).sort((a, b) => b.updated - a.updated); }
+  function localProgressList() { return Object.values(localProgressMap()).filter(_recentProg).sort((a, b) => b.updated - a.updated); }
   function mergeProgress(local, supa) {
     const seen = new Set(); const out = [];
     for (const x of [...(local || []), ...(supa || [])]) { const k = String(x.id); if (k && !seen.has(k)) { seen.add(k); out.push(x); } }
@@ -1369,10 +1370,13 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
       const rect = track.getBoundingClientRect();
       const pct = Math.max(0, Math.min((e.clientX - rect.left) / rect.width, 1));
       if (video.duration && isFinite(video.duration)) video.currentTime = pct * video.duration;
+      resetHideCtrl();
     };
-    track.addEventListener('mousedown', e => { seeking = true; doSeek(e); });
-    document.addEventListener('mousemove', e => { if (seeking) doSeek(e); });
-    document.addEventListener('mouseup', () => { seeking = false; });
+    // Pointer Events = funciona com mouse E toque (iPhone/Android): tocar/arrastar na barra pra escolher o minuto
+    track.addEventListener('pointerdown', e => { seeking = true; try { track.setPointerCapture(e.pointerId); } catch {} doSeek(e); });
+    track.addEventListener('pointermove', e => { if (seeking) doSeek(e); });
+    track.addEventListener('pointerup', () => { seeking = false; });
+    track.addEventListener('pointercancel', () => { seeking = false; });
 
     // Tooltip de tempo ao passar o mouse na barra (escolher o minuto) — só VOD
     const seekTip = document.getElementById('pSeekTip');
