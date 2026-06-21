@@ -425,7 +425,7 @@ const TVFunDB = {
         .order('updated_at', { ascending: false }).limit(limit);
       return (data || [])
         .filter(r => r.position_seconds > 60)   // recentes/assistidos (inclui concluídos = histórico cross-device)
-        .map(r => ({ id: r.content_id, name: r.name, logo: r.logo, group: r.group_name, url: r.url, kind: r.kind || 'movie', position: r.position_seconds, duration: r.duration_seconds }));
+        .map(r => ({ id: r.content_id, name: r.name, logo: r.logo, group: r.group_name, url: r.url, kind: r.kind || 'movie', position: r.position_seconds, duration: r.duration_seconds, updated: r.updated_at ? new Date(r.updated_at).getTime() : 0 }));
     } catch { return []; }
   },
 

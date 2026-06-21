@@ -543,18 +543,26 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
     // Special rows always shown (if they have content)
     if (group === 'all') {
-      const continuar = (state.progressList || []).filter(p => (p.kind || 'movie') === kind).map(p => {
+      const seenSeries = new Set();
+      const continuar = [];
+      const cands = (state.progressList || []).filter(p => (p.kind || 'movie') === kind)
+        .slice().sort((a, b) => (b.updated || 0) - (a.updated || 0));   // mais recentes primeiro
+      for (const p of cands) {
         let logo = p.logo;
-        // capa salva de episódio costuma ser o tvg-logo errado da M3U → usa a capa da série carregada (match pelo nome)
         if (kind === 'series' && p.name) {
+          // capa certa da série (o logo salvo do episódio costuma ser o tvg-logo errado da M3U)
           let best = null;
           for (const c of state.channels) {
             if (c.kind === 'series' && c.name && c.name.length > 3 && p.name.startsWith(c.name) && (!best || c.name.length > best.name.length)) best = c;
           }
           if (best && best.logo) logo = best.logo;
+          // 1 item por série: mantém só o episódio mais recente (pula os demais episódios da mesma série)
+          const sKey = (best && best.name) || p.name.replace(/\s*[Ss]\d{1,2}\s*[Ee]\d{1,3}.*$/, '').trim() || p.name;
+          if (seenSeries.has(sKey)) continue;
+          seenSeries.add(sKey);
         }
-        return { ...p, logo, _resume: true };
-      });
+        continuar.push({ ...p, logo, _resume: true });
+      }
       if (continuar.length) buildRow('▶ Continuar assistindo', continuar, wrap);
       if (favs.length) buildRow('❤ Favoritos', favs, wrap);
     }
