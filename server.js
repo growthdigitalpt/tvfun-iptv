@@ -128,6 +128,7 @@ async function getProcessed(m3uUrl) {
     byKind, seriesIndex,
   };
   listCache.set(m3uUrl, proc);
+  try { fs.writeFileSync(path.join(CACHE_DIR, '_lastm3u.txt'), m3uUrl); } catch {}   // p/ pré-aquecer no próximo boot
   console.log(`[list] ${fonte}: indexou ${items.length} itens (${proc.counts.live} canais, ${proc.counts.movie} filmes, ${proc.counts.series} séries) em ${Date.now() - t0}ms`);
   return proc;
 }
@@ -619,6 +620,14 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`\n  TV Fun server rodando em http://localhost:${PORT}`);
   console.log(`  /api/list?url=...  e  /api/stream?url=...  ativos\n`);
+  // Pré-aquece o cache da lista no boot: faz o download/parse lento AQUI, não na 1ª visita do usuário.
+  const warmUrl = process.env.WARM_M3U_URL || (() => { try { return fs.readFileSync(path.join(CACHE_DIR, '_lastm3u.txt'), 'utf8').trim(); } catch { return ''; } })();
+  if (/^https?:\/\//i.test(warmUrl)) {
+    console.log('  Pré-aquecendo o cache da lista…');
+    getProcessed(warmUrl)
+      .then(() => { console.log('  ✓ Lista pronta em cache'); return getApiCovers(warmUrl).catch(() => {}); })
+      .catch((e) => console.log('  pré-aquecimento falhou:', e.message));
+  }
 });
 
 // Rede de segurança: um proxy de vídeo lida com sockets instáveis;

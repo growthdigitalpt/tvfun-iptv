@@ -429,6 +429,14 @@ const TVFunDB = {
     } catch { return []; }
   },
 
+  // Apaga TODO o progresso (continuar assistindo) do usuário — usado pelo botão "Limpar"
+  async clearProgress() {
+    const user = await this.getUser();
+    if (!user || !_sb) return false;
+    const { error } = await _sb.from('watch_progress').delete().eq('user_id', user.id);
+    return !error;
+  },
+
   // ═══════════════ AUTH GUARD ═══════════════
 
   /** Mostra loader, verifica sessão, redireciona se não logado */

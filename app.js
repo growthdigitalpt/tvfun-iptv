@@ -563,7 +563,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
         }
         continuar.push({ ...p, logo, _resume: true });
       }
-      if (continuar.length) buildRow('▶ Continuar assistindo', continuar, wrap);
+      if (continuar.length) buildRow('▶ Continuar assistindo', continuar, wrap, { onClear: clearWatchProgress });
       if (favs.length) buildRow('❤ Favoritos', favs, wrap);
     }
     if (group === 'Favoritos') { buildRow('❤ Favoritos', favs, wrap); return; }
@@ -582,14 +582,18 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     });
   }
 
-  function buildRow(title, channels, wrap) {
+  function buildRow(title, channels, wrap, opts = {}) {
     if (!channels.length) return;
     const row = document.createElement('div');
     row.className = 'row';
+    const clearBtn = opts.onClear ? '<button class="row-clear" type="button">🗑 Limpar</button>' : '';
     row.innerHTML = `
       <div class="row-header">
         <h2 class="row-title">${title}</h2>
-        <button class="row-seeall" type="button">Ver tudo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg></button>
+        <div class="row-header-actions">
+          ${clearBtn}
+          <button class="row-seeall" type="button">Ver tudo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
       </div>
       <div class="row-scroller-wrap">
         <button class="scroll-arrow left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -619,6 +623,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
     row.querySelector('.scroll-arrow.left').onclick = () => scroller.scrollBy({ left: -600, behavior: 'smooth' });
     row.querySelector('.scroll-arrow.right').onclick = () => { renderBatch(); scroller.scrollBy({ left: 600, behavior: 'smooth' }); };
     row.querySelector('.row-seeall').onclick = () => openCategoryGrid(title, channels);
+    if (opts.onClear) row.querySelector('.row-clear').onclick = opts.onClear;
     wrap.appendChild(row);
 
     // só monta os cards quando a fileira chega perto da viewport
@@ -1125,6 +1130,15 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
   function saveProgressBoth(ch, pos, dur) {
     saveLocalProgress(ch, pos, dur);
     if (typeof TVFunDB !== 'undefined' && TVFunDB.saveProgress) TVFunDB.saveProgress(ch, pos, dur).catch(() => {});
+  }
+  // Limpa TODO o "Continuar assistindo" (local + nuvem) — botão 🗑 Limpar
+  async function clearWatchProgress() {
+    if (!confirm('Limpar tudo do "Continuar assistindo"?\n\nIsso apaga o histórico de onde você parou (em todos os aparelhos).')) return;
+    try { localStorage.removeItem(PROG_KEY); } catch {}
+    if (typeof TVFunDB !== 'undefined' && TVFunDB.clearProgress) { try { await TVFunDB.clearProgress(); } catch {} }
+    state.progressList = [];
+    renderRows();
+    showToast('✓ "Continuar assistindo" limpo');
   }
   // Posição salva (local primeiro; senão Supabase). 0 = sem progresso.
   async function getResumePos(cid) {
