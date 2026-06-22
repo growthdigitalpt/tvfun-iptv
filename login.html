@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Entrar — TV Fun</title>
+  <script>/* overlay de debug — só aparece no webOS (TV) ou com ?tvdebug */(function(){if(navigator.userAgent.indexOf('Web0S')<0&&location.search.indexOf('tvdebug')<0)return;function S(m){var b=document.getElementById('__tvlog');if(!b){b=document.createElement('div');b.id='__tvlog';b.style.cssText='position:fixed;left:0;bottom:0;z-index:2147483647;max-height:46%;overflow:auto;background:rgba(0,0,0,.88);color:#0f0;font:14px monospace;padding:8px;white-space:pre-wrap;width:100%';(document.body||document.documentElement).appendChild(b);}b.textContent+=m+'\n';}window.addEventListener('error',function(e){S('ERR: '+(e.message||(e.error&&e.error.message))+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''));});window.addEventListener('unhandledrejection',function(e){var r=e.reason;S('REJECT: '+(r&&(r.stack||r.message)||r));});var oe=console.error;console.error=function(){S('cerr: '+Array.prototype.slice.call(arguments).join(' '));oe.apply(console,arguments);};S('TVDEBUG on. path='+location.pathname+' UA='+navigator.userAgent.slice(0,30));window.__tvlog=S;})();</script>
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
