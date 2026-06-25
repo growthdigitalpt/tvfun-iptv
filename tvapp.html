@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
+  <title>TV Fun</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; color: #fff;
+      background: #0b0b0f;
+      background-image: radial-gradient(1100px 760px at 78% -8%, rgba(229,9,20,.14), transparent 60%), radial-gradient(900px 700px at 8% 108%, rgba(60,40,120,.18), transparent 55%), linear-gradient(160deg, #14121a 0%, #0b0b0f 55%);
+      font-family: Arial, Helvetica, sans-serif; font-weight: 600; overflow: hidden; text-transform: uppercase; }
+    body::before { content: ''; position: fixed; inset: -25%; z-index: 0; pointer-events: none;
+      background: radial-gradient(640px 640px at 18% 28%, rgba(229,9,20,.26), transparent 62%), radial-gradient(720px 720px at 82% 72%, rgba(90,45,200,.30), transparent 62%), radial-gradient(560px 560px at 62% 8%, rgba(20,140,220,.20), transparent 58%);
+      animation: bgmove 16s ease-in-out infinite alternate; }
+    @keyframes bgmove { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(5%, -4%) scale(1.12); } }
+    #app { width: 100%; height: 100%; position: relative; z-index: 1; }
+    .loading { position: fixed; inset: 0; background: #0b0b0f; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+    .loading.on { display: flex; }
+    .ld-txt { color: #8a8a93; font-size: 22px; }
+    .screen { position: absolute; inset: 0; display: none; }
+    .screen.on { display: block; }
+    .focused { outline: none; }
+
+    /* Login */
+    .login-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; }
+    .logo { font-size: 60px; font-weight: 900; color: #e50914; letter-spacing: -2px; }
+    .sub { color: #aaa; font-size: 22px; margin-top: -8px; }
+    .field { width: 700px; max-width: 80%; }
+    .field label { display: block; font-size: 20px; color: #ccc; margin: 0 0 7px 4px; }
+    .field input { width: 100%; font-size: 28px; padding: 16px 20px; border-radius: 12px; border: 3px solid #333; background: #16161c; color: #fff; outline: none; }
+    .field input.focused { border-color: #e50914; background: #1d1d24; }
+    .btn { font-size: 26px; font-weight: 800; padding: 16px 22px; border-radius: 12px; border: 3px solid transparent; background: #e50914; color: #fff; cursor: pointer; text-align: center; }
+    .btn.focused { border-color: #fff; filter: brightness(1.18); }
+    .btn.wide { width: 700px; max-width: 80%; }
+    .btn.alt { background: #16161c; color: #ddd; }
+    .btn.alt.focused { border-color: #e50914; background: #1d1d24; }
+    .msg { min-height: 28px; font-size: 20px; color: #ff6b6b; text-align: center; }
+    .msg.ok { color: #4ade80; }
+
+    /* Menu (home 4 botões) */
+    .menu-wrap { display: flex; flex-direction: column; height: 100%; padding: 60px 70px; }
+    .menu-top { display: flex; align-items: center; gap: 20px; }
+    .menu-top .who { margin-left: auto; color: #888; font-size: 20px; }
+    .menu-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 26px; margin-top: 36px; }
+    .menu-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      border-radius: 22px; border: 4px solid transparent; font-size: 44px; font-weight: 900;
+      transition: transform .18s ease, box-shadow .18s ease; box-shadow: 0 8px 26px rgba(0,0,0,.4); }
+    .menu-card[data-go="live"] { background: linear-gradient(135deg, #2a86e0, #0c3f86); }
+    .menu-card[data-go="movie"] { background: linear-gradient(135deg, #f0202e, #8a0610); }
+    .menu-card[data-go="series"] { background: linear-gradient(135deg, #9b46e0, #4a1a8a); }
+    .menu-card[data-go="settings"] { background: linear-gradient(135deg, #4a4a55, #20202a); }
+    .menu-card .ic { font-size: 80px; }
+    .menu-card.focused { border-color: #fff; transform: scale(1.06); box-shadow: 0 0 46px rgba(255,255,255,.32), 0 12px 32px rgba(0,0,0,.55); }
+
+    /* Browse (2 colunas) */
+    .br-top { height: 86px; display: flex; align-items: center; gap: 18px; padding: 0 40px; border-bottom: 1px solid #1c1c24; }
+    .br-top .ttl { font-size: 30px; font-weight: 800; }
+    .search { margin-left: auto; width: 420px; }
+    .search input { width: 100%; font-size: 25px; padding: 13px 20px; border-radius: 24px; border: 3px solid #333; background: #16161c; color: #fff; outline: none; }
+    .search input.focused { border-color: #e50914; }
+    .br-body { position: absolute; top: 86px; bottom: 0; left: 0; right: 0; display: flex; }
+    .cats { width: 340px; flex-shrink: 0; overflow-y: auto; border-right: 1px solid #1c1c24; padding: 14px 0; }
+    .cat { padding: 15px 26px; font-size: 27px; color: #bbb; border-left: 5px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cat.sel { color: #fff; }
+    .cat.focused { background: #1a1a22; border-left-color: #e50914; color: #fff; }
+    .grid { flex: 1; overflow-y: auto; padding: 22px 30px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; align-content: start; }
+    .card { border-radius: 12px; overflow: hidden; background: #16161c; border: 4px solid transparent; display: flex; flex-direction: column; }
+    .card.focused { border-color: #fff; transform: scale(1.04); }
+    .card .cv { width: 100%; flex: 1; min-height: 0; object-fit: cover; display: block; background: #16161c; }
+    .card .cv.fit-contain { object-fit: contain; }
+    .season-sel { display: inline-flex; align-items: center; gap: 10px; }
+    .card .cl { padding: 8px 9px 11px; font-size: 20px; line-height: 1.2; height: 62px; overflow: hidden; }
+    .empty { padding: 40px; color: #888; font-size: 24px; }
+    .content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .live-prev { display: none; padding: 16px 30px 6px; gap: 22px; align-items: center; }
+    .live-prev.on { display: flex; }
+    #pvVideo { width: 460px; height: 259px; background: #000; border-radius: 10px; flex-shrink: 0; }
+    .pv-name { font-size: 27px; font-weight: 800; }
+    .pv-hint { font-size: 17px; color: #8a8a93; margin-top: 8px; }
+    .chrow { flex-direction: row !important; align-items: center; gap: 14px; padding: 0 14px; }
+    .chrow .chlogo { width: 70px; height: 44px; object-fit: contain; flex-shrink: 0; background: #000; border-radius: 4px; }
+    .chrow .chnm { font-size: 27px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rows { display: none; flex: 1; overflow-y: auto; padding: 16px 40px 60px; min-width: 0; }
+    .rows.on { display: block; }
+    .shelf { margin-bottom: 28px; }
+    .shelf-title { font-size: 27px; font-weight: 800; margin: 0 0 12px 4px; }
+    .strip { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; }
+    .scard { flex: 0 0 auto; width: 210px; border-radius: 10px; overflow: hidden; border: 4px solid transparent; background: #16161c; display: flex; flex-direction: column; }
+    .scard.focused { border-color: #fff; transform: scale(1.05); }
+    .scard .scv { width: 100%; height: 300px; object-fit: cover; display: block; background: #16161c; }
+    .scard.contain .scv { object-fit: contain; }
+    .scard .scl { padding: 7px 8px; font-size: 17px; height: 46px; overflow: hidden; line-height: 1.2; }
+
+    /* Details */
+    .det2 { height: 100%; display: flex; flex-direction: column; position: relative; }
+    .det-season { padding: 0 60px 12px 290px; flex-shrink: 0; }
+    .season-drop { display: none; position: absolute; left: 290px; min-width: 300px; background: #1a1a22; border: 2px solid #2c2c36; border-radius: 12px; max-height: 360px; overflow-y: auto; z-index: 10; box-shadow: 0 14px 44px rgba(0,0,0,.7); }
+    .season-drop.on { display: block; }
+    .season-opt { padding: 13px 26px; font-size: 23px; white-space: nowrap; }
+    .season-opt.focused { background: #e50914; }
+    .det-hero { position: relative; height: 42%; flex-shrink: 0; overflow: hidden; }
+    .det-backdrop { position: absolute; inset: 0; background-position: center; background-size: cover; background-color: #111; }
+    .det-hero-grad { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,11,15,.96), rgba(11,11,15,.35) 45%, rgba(11,11,15,.12)), linear-gradient(0deg, #0b0b0f, transparent 55%); }
+    .det-cover2 { position: absolute; left: 60px; bottom: -64px; width: 200px; height: 300px; border-radius: 12px; background-position: center; background-size: cover; background-color: #16161c; box-shadow: 0 10px 34px rgba(0,0,0,.7); z-index: 2; }
+    .det-hero-info { position: absolute; left: 290px; bottom: 18px; right: 50px; z-index: 2; }
+    .det-title2 { font-size: 46px; font-weight: 900; text-shadow: 0 2px 12px #000; line-height: 1.05; }
+    .det-meta2 { font-size: 22px; color: #cfcfd6; margin-top: 10px; }
+    .det-badge { background: #e50914; color: #fff; font-size: 16px; font-weight: 800; padding: 4px 13px; border-radius: 6px; margin-right: 4px; }
+    .det-actions2 { display: flex; gap: 16px; padding: 84px 60px 12px 290px; flex-wrap: wrap; flex-shrink: 0; }
+    .det-syn { padding: 0 60px 12px 290px; font-size: 21px; color: #cfcfd6; line-height: 1.4; max-height: 120px; overflow: hidden; flex-shrink: 0; text-transform: none; }
+    .det-eps2 { flex: 1; overflow-y: auto; padding: 6px 60px 40px 290px; }
+    .btn-watch { background: #e50914; }
+    .btn-fav { background: #1c1c24; color: #eee; }
+    .btn-fav.is-fav { background: #e50914; }
+    .btn-season { background: #1c1c24; color: #eee; }
+    .ep { padding: 14px 20px; border-radius: 10px; border: 3px solid transparent; font-size: 24px; background: #14141a; margin-bottom: 9px; }
+    .ep.focused { border-color: #fff; background: #1d1d26; }
+
+    /* Settings */
+    .set { max-width: 760px; margin: 0 auto; padding: 56px 40px; display: flex; flex-direction: column; gap: 18px; height: 100%; }
+    .set h2 { font-size: 34px; margin: 0 0 6px; }
+    .set .hint { color: #888; font-size: 19px; margin-top: -8px; }
+
+    /* Player */
+    #player { position: absolute; inset: 0; background: #000; display: none; }
+    #player.on { display: block; }
+    #video { width: 100%; height: 100%; background: #000; }
+    .pl-name { position: absolute; top: 30px; left: 40px; font-size: 28px; font-weight: 800; text-shadow: 0 2px 8px #000; background: rgba(0,0,0,.45); padding: 8px 18px; border-radius: 10px; }
+    .pl-bar { position: absolute; left: 40px; right: 40px; bottom: 44px; height: 8px; background: rgba(255,255,255,.2); border-radius: 4px; display: none; }
+    .pl-bar.on { display: block; }
+    .pl-fill { height: 100%; width: 0; background: #e50914; border-radius: 4px; }
+    .pl-time { position: absolute; right: 40px; bottom: 60px; font-size: 20px; color: #ddd; background: rgba(0,0,0,.5); padding: 4px 12px; border-radius: 8px; display: none; }
+    .pl-time.on { display: block; }
+    .pl-hint { position: absolute; bottom: 16px; left: 40px; font-size: 18px; color: #bbb; }
+    .pl-name, .pl-bar, .pl-time, .pl-hint { transition: opacity .35s ease; }
+    #player.ctrl-hidden .pl-name, #player.ctrl-hidden .pl-bar, #player.ctrl-hidden .pl-time, #player.ctrl-hidden .pl-hint { opacity: 0; pointer-events: none; }
+    .next-ep { position: absolute; right: 40px; bottom: 90px; background: #e50914; color: #fff; font-size: 24px; font-weight: 800; padding: 14px 26px; border-radius: 12px; border: 4px solid #fff; display: none; }
+    .next-ep.on { display: block; }
+    .spin { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; margin: -30px; border: 5px solid rgba(255,255,255,.15); border-top-color: #e50914; border-radius: 50%; animation: sp .8s linear infinite; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+  <script src="https://projeto01-tvfun.grgyfj.easypanel.host/supabase.js"></script>
+</head>
+<body>
+  <div id="loading" class="loading"><div class="logo">TV FUN</div><div class="spin" style="position:static;margin:0"></div><div class="ld-txt">Carregando…</div></div>
+  <div id="app">
+    <!-- Login -->
+    <div id="scLogin" class="screen">
+      <div class="login-wrap">
+        <div class="logo">TV FUN</div>
+        <div class="sub">Entre com sua conta</div>
+        <div class="field"><label>E-mail</label><input id="inEmail" type="email" inputmode="email"></div>
+        <div class="field"><label>Senha</label><input id="inPass" type="password"></div>
+        <div id="btnLogin" class="btn wide">Entrar</div>
+        <div id="msgLogin" class="msg"></div>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div id="scMenu" class="screen">
+      <div class="menu-wrap">
+        <div class="menu-top"><div class="logo" style="font-size:40px">TV FUN</div><div id="who" class="who"></div></div>
+        <div class="menu-grid">
+          <div class="menu-card" data-go="live">Canais</div>
+          <div class="menu-card" data-go="movie">Filmes</div>
+          <div class="menu-card" data-go="series">Séries</div>
+          <div class="menu-card" data-go="settings">Configurações</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Browse -->
+    <div id="scBrowse" class="screen">
+      <div class="br-top">
+        <div id="brBack" class="btn alt">◀ Voltar</div>
+        <div id="brTtl" class="ttl">Canais</div>
+        <div class="search"><input id="brSearch" type="text" placeholder="Buscar…"></div>
+      </div>
+      <div class="br-body">
+        <div id="cats" class="cats"></div>
+        <div class="content">
+          <div id="livePrev" class="live-prev">
+            <video id="pvVideo" playsinline></video>
+            <div><div id="pvName" class="pv-name"></div><div class="pv-hint">OK = assistir aqui · OK de novo = tela cheia</div></div>
+          </div>
+          <div id="grid" class="grid"></div>
+        </div>
+        <div id="rows" class="rows"></div>
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div id="scDetails" class="screen">
+      <div class="det2">
+        <div class="det-hero">
+          <div id="detBackdrop" class="det-backdrop"></div>
+          <div class="det-hero-grad"></div>
+          <div id="detCover" class="det-cover2"></div>
+          <div class="det-hero-info"><div id="detTitle" class="det-title2"></div><div id="detMeta" class="det-meta2"></div></div>
+        </div>
+        <div id="detActions" class="det-actions2"></div>
+        <div id="detSynopsis" class="det-syn"></div>
+        <div id="detSeason" class="det-season"></div>
+        <div id="detEps" class="det-eps2"></div>
+        <div id="seasonDrop" class="season-drop"></div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="scSettings" class="screen">
+      <div class="set">
+        <div id="stBack" class="btn alt" style="align-self:flex-start">◀ Voltar</div>
+        <h2>Configurações</h2>
+        <div class="hint">Trocar as credenciais do servidor (usuário/senha do painel). Vale na hora, em todos os aparelhos.</div>
+        <div class="field"><label>Usuário do servidor</label><input id="stUser" type="text"></div>
+        <div class="field"><label>Senha do servidor</label><input id="stPass" type="text"></div>
+        <div class="field"><label>Host (opcional)</label><input id="stHost" type="text" placeholder="alphapublic.top"></div>
+        <div id="stSave" class="btn wide">Salvar credenciais</div>
+        <div id="stMsg" class="msg"></div>
+        <div id="stLogout" class="btn wide alt">Sair da conta</div>
+      </div>
+    </div>
+
+    <!-- Player -->
+    <div id="player">
+      <video id="video" playsinline></video>
+      <div id="plName" class="pl-name"></div>
+      <div id="plTime" class="pl-time"></div>
+      <div id="plBar" class="pl-bar"><div id="plFill" class="pl-fill"></div></div>
+      <div id="nextEp" class="next-ep">Próximo episódio ▶</div>
+      <div class="pl-hint">◀ Voltar sair · ← → avançar/voltar · OK pausar</div>
+      <div id="plSpin" class="spin"></div>
+    </div>
+  </div>
+  <script src="tvapp.js"></script>
+</body>
+</html>

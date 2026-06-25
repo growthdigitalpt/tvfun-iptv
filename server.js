@@ -587,6 +587,7 @@ function json(res, code, obj) {
 }
 
 function serveStatic(req, res, pathname) {
+  if (pathname === '/tv' || pathname === '/tv/') pathname = '/tvapp.html';   // app de TV no navegador (link limpo)
   let filePath = path.join(ROOT, pathname === '/' ? 'index.html' : decodeURIComponent(pathname));
   if (!filePath.startsWith(ROOT)) { res.writeHead(403); return res.end('forbidden'); }
   fs.readFile(filePath, (err, data) => {
