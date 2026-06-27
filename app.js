@@ -1575,7 +1575,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
   // Busca um tipo de conteúdo no proxy
   async function fetchKind(kind, url) {
-    const res = await fetch('/api/list?kind=' + kind + '&url=' + encodeURIComponent(url || state.listUrl) + '&limit=5000&perGroup=100');
+    const res = await fetch('/api/list?kind=' + kind + '&url=' + encodeURIComponent(url || state.listUrl) + '&limit=8000&perGroup=2000');
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
     return res.json();
   }
