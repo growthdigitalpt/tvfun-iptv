@@ -154,6 +154,7 @@ async function handleList(req, res, urlObj) {
   const kind = urlObj.searchParams.get('kind') || 'live';
   const limit = parseInt(urlObj.searchParams.get('limit') || '4000', 10);
   const perGroup = parseInt(urlObj.searchParams.get('perGroup') || '80', 10);
+  const group = urlObj.searchParams.get('group');   // se vier, devolve SÓ essa categoria, inteira (sem perGroup)
   if (!m3uUrl) return json(res, 400, { error: 'parâmetro url ausente' });
 
   try {
@@ -164,6 +165,15 @@ async function handleList(req, res, urlObj) {
       // agrupa por nome de série (cada série = 1 card) + capa real da API
       const covers = await getApiCovers(m3uUrl);
       const all = [...proc.seriesIndex.values()];
+      if (group) {
+        const g1 = [];
+        for (const s of all) {
+          if ((s.group || 'Outros') === group && g1.length < limit) {
+            g1.push({ name: s.series, series: s.series, group: s.group || 'Outros', logo: covers.series.get(normalizeName(s.series)) || '', kind: 'series', episodeCount: s.episodes.length });
+          }
+        }
+        return json(res, 200, { kind, counts: proc.counts, total: all.length, returned: g1.length, groups: [], channels: g1 });
+      }
       const perGroupCount = new Map();
       const out = [];
       for (const s of all) {
@@ -183,7 +193,13 @@ async function handleList(req, res, urlObj) {
 
     // live ou movie
     const items = proc.byKind[kind] || [];
-    const { out, groups } = groupAndLimit(items, limit, perGroup);
+    let out, groups;
+    if (group) {
+      out = items.filter((it) => (it.group || 'Outros') === group).slice(0, limit);
+      groups = [];
+    } else {
+      ({ out, groups } = groupAndLimit(items, limit, perGroup));
+    }
     if (kind === 'movie') {
       // capa real da API (por stream_id extraído da URL)
       const covers = await getApiCovers(m3uUrl);

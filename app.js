@@ -639,6 +639,16 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
   // ===== GRID "VER TUDO" — todos os títulos de uma categoria numa grade =====
   function openCategoryGrid(title, items) {
     if (window.fxPlay) window.fxPlay();
+    if (/Continuar|Favoritos/.test(title) || !state.listUrl) { renderCatGrid(title, items); return; }
+    const head = document.getElementById('mainContent');
+    head.innerHTML = '<div class="cat-grid-head"><button class="cat-grid-back" id="catGridBackL">← Voltar</button><h2 class="cat-grid-title">' + title + '</h2><span class="cat-grid-count">carregando…</span></div>';
+    const bk = document.getElementById('catGridBackL'); if (bk) bk.addEventListener('click', renderRows);
+    fetch('/api/list?kind=' + state.activeKind + '&url=' + encodeURIComponent(state.listUrl) + '&group=' + encodeURIComponent(title) + '&limit=8000')
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderCatGrid(title, (data && data.channels && data.channels.length) ? data.channels : items); })
+      .catch(function () { renderCatGrid(title, items); });
+  }
+  function renderCatGrid(title, items) {
     const wrap = document.getElementById('mainContent');
     wrap.innerHTML =
       '<div class="cat-grid-head">' +
@@ -1577,7 +1587,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
   // Busca um tipo de conteúdo no proxy
   async function fetchKind(kind, url) {
-    const res = await fetch('/api/list?kind=' + kind + '&url=' + encodeURIComponent(url || state.listUrl) + '&limit=8000&perGroup=2000');
+    const res = await fetch('/api/list?kind=' + kind + '&url=' + encodeURIComponent(url || state.listUrl) + '&limit=6000&perGroup=60');
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
     return res.json();
   }

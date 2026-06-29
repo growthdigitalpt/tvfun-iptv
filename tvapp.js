@@ -23,6 +23,7 @@
   var loginEls = [inEmail, inPass, btnLogin], loginIdx = 0;
   var menuIdx = 0;
   var curKind = 'live', brChannels = [], brCats = [], brCat = '__all__', brList = [], brZone = 'grid', topIdx = 0, catIdx = 0, gridIdx = 0, searchText = '';
+  var gridList = [], gridShown = 0, catItems = [], catCache = {}, catFetchTimer = 0;
   var detSeason = $('detSeason'), seasonDrop = $('seasonDrop');
   var detItem = null, detKind = 'movie', detRows = [], detRow = 0, detCol = 0;
   var detSeasonKeys = [], detSeasonsData = {}, detSeasonIdx = 0, detCurEps = [];
@@ -101,7 +102,7 @@
   }
   function getList(kind) {
     if (kindCache[kind]) return Promise.resolve(kindCache[kind]);
-    var url = API + '/api/list?kind=' + kind + '&url=' + encodeURIComponent(m3uUrl) + '&limit=8000&perGroup=2000';
+    var url = API + '/api/list?kind=' + kind + '&url=' + encodeURIComponent(m3uUrl) + '&limit=2500&perGroup=60';
     return fetch(url).then(function (r) { return r.json(); }).then(function (d) { kindCache[kind] = { channels: (d && d.channels) || [], groups: (d && d.groups) || [] }; return kindCache[kind]; }, function () { return { channels: [], groups: [] }; });
   }
   function prefetchAll() { if (m3uUrl) { getList('live'); getList('movie'); getList('series'); } }
@@ -245,30 +246,29 @@
   }
   function curFilter() {
     var s = searchText.trim().toLowerCase();
-    if (s) return brChannels.filter(function (c) { return (c.name || '').toLowerCase().indexOf(s) >= 0; }).slice(0, 500);
+    if (s) return brChannels.filter(function (c) { return (c.name || '').toLowerCase().indexOf(s) >= 0; });
     if (brCat === '__cont__') return kindProg;
     if (brCat === '__fav__') return kindFavs;
-    if (brCat === '__all__') return brChannels.slice(0, 500);
-    return brChannels.filter(function (c) { return (c.group || '') === brCat; }).slice(0, 500);
+    if (brCat === '__all__') return brChannels;
+    return catItems;
+  }
+  function cardHtml(c, i) {
+    if (curKind === 'live') return '<div class="card chrow" data-i="' + i + '"><div class="chnm">' + esc(c.name || '—') + '</div></div>';
+    var contain = curKind === 'movie' ? ' fit-contain' : '';
+    var lg = c.logo ? String(c.logo).replace(/"/g, '%22') : '';
+    var cover = lg ? '<img class="cv' + contain + '" loading="lazy" src="' + lg + '">' : '<div class="cv"></div>';
+    return '<div class="card" data-i="' + i + '">' + cover + '<div class="cl">' + esc(c.name || '—') + '</div></div>';
+  }
+  function renderGridBatch() {
+    var end = Math.min(gridShown + 120, gridList.length), h = '';
+    for (var i = gridShown; i < end; i++) h += cardHtml(gridList[i], i);
+    if (h) gridEl.insertAdjacentHTML('beforeend', h);
+    gridShown = end;
   }
   function renderGrid() {
-    brList = curFilter();
-    if (!brList.length) { gridEl.innerHTML = '<div class="empty">Nada encontrado.</div>'; return; }
-    var h = '';
-    if (curKind === 'live') {
-      for (var i = 0; i < brList.length; i++) {
-        h += '<div class="card chrow" data-i="' + i + '"><div class="chnm">' + esc(brList[i].name || '—') + '</div></div>';
-      }
-    } else {
-      var contain = curKind === 'movie' ? ' fit-contain' : '';
-      for (var j = 0; j < brList.length; j++) {
-        var cc = brList[j];
-        var lg2 = cc.logo ? String(cc.logo).replace(/"/g, '%22') : '';
-        var cover = lg2 ? '<img class="cv' + contain + '" loading="lazy" src="' + lg2 + '">' : '<div class="cv"></div>';
-        h += '<div class="card" data-i="' + j + '">' + cover + '<div class="cl">' + esc(cc.name || '—') + '</div></div>';
-      }
-    }
-    gridEl.innerHTML = h;
+    gridList = curFilter(); gridShown = 0; gridEl.innerHTML = '';
+    if (!gridList.length) { gridEl.innerHTML = '<div class="empty">Nada encontrado.</div>'; return; }
+    renderGridBatch();
   }
   function cards() { return [].slice.call(gridEl.querySelectorAll('.card')); }
   function catEls() { return [].slice.call(catsEl.querySelectorAll('.cat')); }
@@ -281,8 +281,23 @@
   function hlGrid() { var cs = cards(); if (cs[gridIdx]) focusEl(cs[gridIdx]); }
   function applyCat() {
     brCat = brCats[catIdx] ? brCats[catIdx].name : '__all__';
-    gridIdx = 0; renderGrid();
+    gridIdx = 0;
     catEls().forEach(function (e, i) { e.classList.toggle('sel', i === catIdx); });
+    if (brCat === '__all__' || brCat === '__cont__' || brCat === '__fav__') { catItems = []; renderGrid(); return; }
+    var ck = curKind + ':' + brCat;
+    if (catCache[ck]) { catItems = catCache[ck]; renderGrid(); return; }
+    gridEl.innerHTML = '<div class="empty">Carregando…</div>'; gridList = []; gridShown = 0;
+    var want = brCat;
+    if (catFetchTimer) clearTimeout(catFetchTimer);
+    catFetchTimer = setTimeout(function () {
+      if (brCat !== want) return;
+      fetch(API + '/api/list?kind=' + curKind + '&url=' + encodeURIComponent(m3uUrl) + '&group=' + encodeURIComponent(want) + '&limit=6000').then(function (r) { return r.json(); }).then(function (data) {
+        var chs = (data && data.channels) || [];
+        catCache[ck] = chs.filter(function (c) { return (c.group || '') === want; });   // segurança: filtra pelo grupo (caso o servidor ainda ignore &group=)
+        if (brCat !== want) return;
+        catItems = catCache[ck]; renderGrid();
+      }).catch(function () { if (brCat === want) gridEl.innerHTML = '<div class="empty">Erro ao carregar.</div>'; });
+    }, 200);
   }
   function browseKey(k, e) {
     e.preventDefault();
@@ -306,15 +321,15 @@
     if (brZone === 'cats') {
       if (k === 38) { if (catIdx === 0) { brZone = 'top'; topIdx = 1; focusEl(brSearch); } else { catIdx--; applyCat(); hlCats(); } }
       else if (k === 40) { catIdx = Math.min(catEls().length - 1, catIdx + 1); applyCat(); hlCats(); }
-      else if (k === 39 || k === 13) { if (brList.length) { brZone = 'grid'; gridIdx = 0; hlGrid(); } }
+      else if (k === 39 || k === 13) { if (gridList.length) { brZone = 'grid'; gridIdx = 0; hlGrid(); } }
       return;
     }
     // grid
     if (k === 37) { if (gridIdx % COLS === 0) { brZone = 'cats'; hlCats(); } else { gridIdx--; hlGrid(); } }
-    else if (k === 39) { if (gridIdx % COLS !== COLS - 1 && gridIdx < brList.length - 1) { gridIdx++; hlGrid(); } }
+    else if (k === 39) { if (gridIdx % COLS !== COLS - 1 && gridIdx < gridList.length - 1) { gridIdx++; if (gridIdx >= gridShown) renderGridBatch(); hlGrid(); } }
     else if (k === 38) { if (gridIdx < COLS) { brZone = 'top'; topIdx = 1; focusEl(brSearch); } else { gridIdx -= COLS; hlGrid(); } }
-    else if (k === 40) { gridIdx = Math.min(brList.length - 1, gridIdx + COLS); hlGrid(); }
-    else if (k === 13) { openItem(brList[gridIdx]); }
+    else if (k === 40) { gridIdx = Math.min(gridList.length - 1, gridIdx + COLS); if (gridIdx >= gridShown - COLS) renderGridBatch(); hlGrid(); }
+    else if (k === 13) { openItem(gridList[gridIdx]); }
   }
   function openItem(item) {
     if (!item) return;
@@ -596,7 +611,7 @@
 
   // live search
   brSearch.addEventListener('input', function () { searchText = brSearch.value || ''; gridIdx = 0; renderGrid(); });
-  brSearch.addEventListener('change', function () { brSearch.blur(); if (brList.length) { brZone = 'grid'; gridIdx = 0; hlGrid(); } });
+  brSearch.addEventListener('change', function () { brSearch.blur(); if (gridList.length) { brZone = 'grid'; gridIdx = 0; hlGrid(); } });
 
   // ---------- BOOT ----------
   function boot() {
