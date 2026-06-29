@@ -18,6 +18,7 @@
     .loading { position: fixed; inset: 0; background: #0b0b0f; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
     .loading.on { display: flex; }
     .ld-txt { color: #8a8a93; font-size: 22px; }
+    #fxCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 900; opacity: 0; pointer-events: none; transition: opacity .32s ease; }
     .screen { position: absolute; inset: 0; display: none; }
     .screen.on { display: block; }
     .focused { outline: none; }
@@ -146,6 +147,7 @@
   <script src="https://projeto01-tvfun.grgyfj.easypanel.host/supabase.js"></script>
 </head>
 <body>
+  <canvas id="fxCanvas"></canvas>
   <div id="loading" class="loading"><div class="logo">TV FUN</div><div class="spin" style="position:static;margin:0"></div><div class="ld-txt">Carregando…</div></div>
   <div id="app">
     <!-- Login -->

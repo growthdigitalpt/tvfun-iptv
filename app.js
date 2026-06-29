@@ -527,6 +527,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
   // ===== ROWS =====
   function renderRows() {
+    if (window.fxPlay) window.fxPlay();
     const wrap = document.getElementById('mainContent');
     wrap.innerHTML = '';
 
@@ -637,6 +638,7 @@ https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltd
 
   // ===== GRID "VER TUDO" — todos os títulos de uma categoria numa grade =====
   function openCategoryGrid(title, items) {
+    if (window.fxPlay) window.fxPlay();
     const wrap = document.getElementById('mainContent');
     wrap.innerHTML =
       '<div class="cat-grid-head">' +

@@ -31,6 +31,7 @@
   var playEngine = null, queue = [], qIdx = -1, isVOD = false, prevView = 'browse', curPlaying = null, progTimer = null, ctrlTimer = null, resumeSec = 0;
 
   function showView(v) {
+    if (view !== v) fxPlay();
     scLogin.classList.toggle('on', v === 'login');
     scMenu.classList.toggle('on', v === 'menu');
     scBrowse.classList.toggle('on', v === 'browse');
@@ -38,6 +39,36 @@
     scSettings.classList.toggle('on', v === 'settings');
     playerEl.classList.toggle('on', v === 'player');
     view = v;
+  }
+  // ---------- SHADER DE TRANSIÇÃO (WebGL puro, com fallback) ----------
+  var fxCanvas = $('fxCanvas'), fxReady = false, fxGl = null, fxUTime = null, fxURes = null, fxRunning = false, fxRaf = 0, fxT0 = 0, fxHide = 0;
+  function fxInit() {
+    try {
+      var gl = fxCanvas.getContext('webgl') || fxCanvas.getContext('experimental-webgl');
+      if (!gl) return;
+      function mk(t, s) { var sh = gl.createShader(t); gl.shaderSource(sh, s); gl.compileShader(sh); return gl.getShaderParameter(sh, gl.COMPILE_STATUS) ? sh : null; }
+      var vs = mk(gl.VERTEX_SHADER, 'attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}');
+      var fs = mk(gl.FRAGMENT_SHADER, 'precision highp float;uniform vec2 resolution;uniform float time;void main(void){vec2 uv=(gl_FragCoord.xy*2.0-resolution.xy)/min(resolution.x,resolution.y);float t=time*0.05;float lw=0.002;vec3 c=vec3(0.0);for(int j=0;j<3;j++){for(int i=0;i<5;i++){c[j]+=lw*float(i*i)/abs(fract(t-0.01*float(j)+float(i)*0.01)*5.0-length(uv)+mod(uv.x+uv.y,0.2));}}gl_FragColor=vec4(c,1.0);}');
+      if (!vs || !fs) return;
+      var pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
+      if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return;
+      gl.useProgram(pr);
+      var b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+      var lp = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
+      fxURes = gl.getUniformLocation(pr, 'resolution'); fxUTime = gl.getUniformLocation(pr, 'time');
+      fxGl = gl; fxReady = true; fxResize();
+    } catch (e) {}
+  }
+  function fxResize() { if (!fxReady) return; fxCanvas.width = Math.floor((fxCanvas.clientWidth || window.innerWidth) / 2); fxCanvas.height = Math.floor((fxCanvas.clientHeight || window.innerHeight) / 2); fxGl.viewport(0, 0, fxCanvas.width, fxCanvas.height); fxGl.uniform2f(fxURes, fxCanvas.width, fxCanvas.height); }
+  function fxLoop() { if (!fxRunning) { fxRaf = 0; return; } try { fxGl.uniform1f(fxUTime, (performance.now() - fxT0) * 0.05); fxGl.drawArrays(fxGl.TRIANGLES, 0, 6); } catch (e) {} fxRaf = requestAnimationFrame(fxLoop); }
+  function fxPlay() {
+    if (!fxReady) return;
+    if (!fxCanvas.width) fxResize();
+    fxT0 = performance.now(); fxRunning = true; fxCanvas.style.opacity = '1';
+    if (!fxRaf) fxRaf = requestAnimationFrame(fxLoop);
+    if (fxHide) clearTimeout(fxHide);
+    fxHide = setTimeout(function () { fxCanvas.style.opacity = '0'; setTimeout(function () { fxRunning = false; }, 340); }, 300);
   }
   function clearFocus() { [].forEach.call(document.querySelectorAll('.focused'), function (e) { e.classList.remove('focused'); }); }
   function focusEl(el) { clearFocus(); if (el) { el.classList.add('focused'); try { el.scrollIntoView({ block: 'nearest' }); } catch (_) {} } }
@@ -70,7 +101,7 @@
   }
   function getList(kind) {
     if (kindCache[kind]) return Promise.resolve(kindCache[kind]);
-    var url = API + '/api/list?kind=' + kind + '&url=' + encodeURIComponent(m3uUrl) + '&limit=2000&perGroup=80';
+    var url = API + '/api/list?kind=' + kind + '&url=' + encodeURIComponent(m3uUrl) + '&limit=8000&perGroup=2000';
     return fetch(url).then(function (r) { return r.json(); }).then(function (d) { kindCache[kind] = { channels: (d && d.channels) || [], groups: (d && d.groups) || [] }; return kindCache[kind]; }, function () { return { channels: [], groups: [] }; });
   }
   function prefetchAll() { if (m3uUrl) { getList('live'); getList('movie'); getList('series'); } }
@@ -214,11 +245,11 @@
   }
   function curFilter() {
     var s = searchText.trim().toLowerCase();
-    if (s) return brChannels.filter(function (c) { return (c.name || '').toLowerCase().indexOf(s) >= 0; }).slice(0, 120);
+    if (s) return brChannels.filter(function (c) { return (c.name || '').toLowerCase().indexOf(s) >= 0; }).slice(0, 500);
     if (brCat === '__cont__') return kindProg;
     if (brCat === '__fav__') return kindFavs;
-    if (brCat === '__all__') return brChannels.slice(0, 120);
-    return brChannels.filter(function (c) { return (c.group || '') === brCat; }).slice(0, 120);
+    if (brCat === '__all__') return brChannels.slice(0, 500);
+    return brChannels.filter(function (c) { return (c.group || '') === brCat; }).slice(0, 500);
   }
   function renderGrid() {
     brList = curFilter();
@@ -573,6 +604,8 @@
       document.body.innerHTML = '<div style="padding:60px;font:26px monospace;color:#f55">Erro: Supabase/Internet indisponível.<br>Verifique a conexão e reabra o app.</div>';
       return;
     }
+    fxInit();
+    window.addEventListener('resize', fxResize);
     TVFunDB.getUser().then(function (u) { if (u) preloadThenMenu(); else renderLogin(); }).catch(function () { renderLogin(); });
   }
   if (document.readyState !== 'loading') boot(); else document.addEventListener('DOMContentLoaded', boot);
